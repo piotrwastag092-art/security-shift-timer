@@ -2,13 +2,13 @@
 "use strict";
 
 /* ==========================================
-   SECURITY SHIFT TERMINAL V2.0
+   SECURITY SHIFT TERMINAL V3.0
    ========================================== */
 
 const $ = id => document.getElementById(id);
 
-const STORAGE_KEY = "securityShiftTerminal_v2";
-const PREFS_KEY = "securityShiftTerminalPrefs_v2";
+const STORAGE_KEY = "securityShiftTerminal_v3";
+const PREFS_KEY = "securityShiftTerminalPrefs_v3";
 
 let shiftStart = null;
 let shiftEnd = null;
@@ -16,16 +16,26 @@ let hourlyRate = 34;
 
 let soundEnabled = true;
 let voiceEnabled = false;
+
+let patrolEnabled = false;
+let reportEnabled = false;
+
 let alarmPlayed = false;
 let shiftStartAnnounced = false;
 
 let previousRemaining = null;
 let lastAnnouncement = "";
+
+let lastPatrolReminder = "";
+let lastReportReminder = "";
+
 let toastTimeout = null;
 let audioContext = null;
 let voiceList = [];
 
-/* FORMATOWANIE */
+/* ==========================================
+   FORMATOWANIE
+   ========================================== */
 
 function pad(number) {
     return String(number).padStart(2, "0");
@@ -65,14 +75,6 @@ function formatDuration(ms) {
     return `${hours} godz. ${pad(remainingMinutes)} min.`;
 }
 
-function formatElapsed(ms) {
-    const seconds = Math.max(0, Math.floor(ms / 1000));
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    return `${pad(hours)}:${pad(minutes)}`;
-}
-
 function formatPaidTime(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -81,7 +83,47 @@ function formatPaidTime(seconds) {
     return `${pad(hours)}:${pad(minutes)}:${pad(remainingSeconds)}`;
 }
 
-/* POWIADOMIENIA EKRANOWE */
+function remainingText(ms) {
+    const totalMinutes = Math.max(0, Math.floor(ms / 60000));
+
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+
+    const parts = [];
+
+    if (days > 0) {
+        parts.push(`${days} ${days === 1 ? "dzień" : "dni"}`);
+    }
+
+    if (hours > 0) {
+        parts.push(
+            `${hours} ${
+                hours === 1 ? "godzina" :
+                hours % 10 >= 2 && hours % 10 <= 4 &&
+                !(hours % 100 >= 12 && hours % 100 <= 14)
+                    ? "godziny" : "godzin"
+            }`
+        );
+    }
+
+    if (minutes > 0 || parts.length === 0) {
+        parts.push(
+            `${minutes} ${
+                minutes === 1 ? "minuta" :
+                minutes % 10 >= 2 && minutes % 10 <= 4 &&
+                !(minutes % 100 >= 12 && minutes % 100 <= 14)
+                    ? "minuty" : "minut"
+            }`
+        );
+    }
+
+    return parts.join(" i ");
+}
+
+/* ==========================================
+   POWIADOMIENIA EKRANOWE
+   ========================================== */
 
 function showToast(message) {
     const toast = $("toast");
@@ -96,7 +138,9 @@ function showToast(message) {
     }, 3500);
 }
 
-/* SYSTEM DŹWIĘKOWY */
+/* ==========================================
+   SYSTEM DŹWIĘKOWY
+   ========================================== */
 
 function playTone(frequency = 700, duration = 0.12, volume = 0.1) {
     if (!soundEnabled) return;
@@ -147,9 +191,7 @@ function playTone(frequency = 700, duration = 0.12, volume = 0.1) {
 function systemBeep() {
     playTone(720, 0.10);
 
-    setTimeout(() => {
-        playTone(960, 0.15);
-    }, 170);
+    setTimeout(() => playTone(960, 0.15), 170);
 }
 
 function completionBeep() {
@@ -159,7 +201,9 @@ function completionBeep() {
     setTimeout(() => playTone(1050, 0.35), 500);
 }
 
-/* ROBO-SECURITY – POLSKI GŁOS */
+/* ==========================================
+   ROBO-SECURITY AI
+   ========================================== */
 
 function loadVoices() {
     if (!("speechSynthesis" in window)) {
@@ -170,14 +214,13 @@ function loadVoices() {
     voiceList = window.speechSynthesis.getVoices();
 
     console.info(
-        "Robo-Security: dostępne głosy:",
+        "Dostępne głosy:",
         voiceList.map(v => `${v.name} (${v.lang})`)
     );
 }
 
 if ("speechSynthesis" in window) {
     loadVoices();
-
     window.speechSynthesis.onvoiceschanged = loadVoices;
 }
 
@@ -192,10 +235,9 @@ function getPolishVoice() {
 }
 
 function setVoiceStatus(status, message) {
-    const state = $("voice-state");
+    $("voice-state").textContent = status;
 
-    state.textContent = status;
-    state.classList.toggle(
+    $("voice-state").classList.toggle(
         "active",
         status === "ACTIVE" || status === "READY"
     );
@@ -204,19 +246,10 @@ function setVoiceStatus(status, message) {
 }
 
 function speak(message) {
-    if (!voiceEnabled) return;
-
-    if (!("speechSynthesis" in window)) {
-        setVoiceStatus(
-            "ERROR",
-            "Przeglądarka nie obsługuje syntezatora mowy."
-        );
-        return;
-    }
+    if (!voiceEnabled || !("speechSynthesis" in window)) return;
 
     const synth = window.speechSynthesis;
 
-    // Usunięcie poprzedniego komunikatu.
     synth.cancel();
 
     const utterance = new SpeechSynthesisUtterance(message);
@@ -254,8 +287,6 @@ function speak(message) {
         );
     };
 
-    // Bez dodatkowego setTimeout: uruchomienie bezpośrednio
-    // po akcji użytkownika pomaga uniknąć blokady przeglądarki.
     synth.resume();
     synth.speak(utterance);
 }
@@ -273,12 +304,12 @@ function activateVoice() {
 
         savePreferences();
 
+        // Uruchomienie bezpośrednio po kliknięciu.
         speak(
             "Robo Security aktywowany. Witaj na służbie. System monitorowania czasu został uruchomiony."
         );
 
         systemBeep();
-
         showToast("Robo-Security aktywowany.");
 
     } else {
@@ -292,28 +323,25 @@ function activateVoice() {
         );
 
         savePreferences();
-
         showToast("Głos został wyłączony.");
     }
 }
 
 function testVoice() {
+    if (!("speechSynthesis" in window)) {
+        showToast("Przeglądarka nie obsługuje głosu.");
+        return;
+    }
+
     if (!voiceEnabled) {
         voiceEnabled = true;
         $("voice-btn").textContent = "WYŁĄCZ GŁOS";
         savePreferences();
     }
 
-    if (!("speechSynthesis" in window)) {
-        showToast("Przeglądarka nie obsługuje głosu.");
-        return;
-    }
-
-    const polishVoice = getPolishVoice();
-
-    if (!polishVoice) {
+    if (!getPolishVoice()) {
         showToast(
-            "Nie wykryto polskiego głosu. Spróbuję użyć głosu systemowego."
+            "Nie wykryto polskiego głosu. Używam głosu systemowego."
         );
     }
 
@@ -324,51 +352,9 @@ function testVoice() {
     systemBeep();
 }
 
-/* POLSKA ODMIANA CZASU */
-
-function numberWord(n, singular, few, many) {
-    if (n === 1) return singular;
-
-    if (
-        n % 10 >= 2 &&
-        n % 10 <= 4 &&
-        !(n % 100 >= 12 && n % 100 <= 14)
-    ) {
-        return few;
-    }
-
-    return many;
-}
-
-function remainingText(ms) {
-    const totalMinutes = Math.max(0, Math.floor(ms / 60000));
-
-    const days = Math.floor(totalMinutes / 1440);
-    const hours = Math.floor((totalMinutes % 1440) / 60);
-    const minutes = totalMinutes % 60;
-
-    const parts = [];
-
-    if (days > 0) {
-        parts.push(
-            `${days} ${numberWord(days, "dzień", "dni", "dni")}`
-        );
-    }
-
-    if (hours > 0) {
-        parts.push(
-            `${hours} ${numberWord(hours, "godzina", "godziny", "godzin")}`
-        );
-    }
-
-    if (minutes > 0 || parts.length === 0) {
-        parts.push(
-            `${minutes} ${numberWord(minutes, "minuta", "minuty", "minut")}`
-        );
-    }
-
-    return parts.join(" i ");
-}
+/* ==========================================
+   KOMUNIKATY O CZASIE SŁUŻBY
+   ========================================== */
 
 function announceRemaining(ms, key) {
     if (!voiceEnabled || lastAnnouncement === key) return;
@@ -405,7 +391,6 @@ function checkAnnouncements(remaining, now) {
         return;
     }
 
-    // Komunikat na pełne godziny.
     const oldHours = Math.floor(previousRemaining / 3600000);
     const newHours = Math.floor(remaining / 3600000);
 
@@ -413,7 +398,6 @@ function checkAnnouncements(remaining, now) {
         announceRemaining(remaining, `hour-${newHours}`);
     }
 
-    // Dodatkowe komunikaty przed zakończeniem.
     const milestones = [
         30 * 60000,
         15 * 60000,
@@ -432,7 +416,6 @@ function checkAnnouncements(remaining, now) {
                 remaining,
                 `milestone-${milestone}`
             );
-
             break;
         }
     }
@@ -440,7 +423,126 @@ function checkAnnouncements(remaining, now) {
     previousRemaining = remaining;
 }
 
-/* LIVE PAYROLL – ZAROBKI */
+/* ==========================================
+   PATROL & CHECKPOINT CONTROL
+   ========================================== */
+
+function isShiftActive(now) {
+    return (
+        shiftStart &&
+        shiftEnd &&
+        now >= shiftStart &&
+        now < shiftEnd
+    );
+}
+
+function getReminderKey(now) {
+    return [
+        now.getFullYear(),
+        pad(now.getMonth() + 1),
+        pad(now.getDate()),
+        pad(now.getHours())
+    ].join("-");
+}
+
+function updatePatrolInterface() {
+    $("patrol-details").classList.toggle(
+        "visible",
+        patrolEnabled
+    );
+
+    $("report-details").classList.toggle(
+        "visible",
+        reportEnabled
+    );
+
+    $("patrol-enabled").checked = patrolEnabled;
+    $("report-enabled").checked = reportEnabled;
+
+    const active = patrolEnabled || reportEnabled;
+
+    $("patrol-status").textContent = active
+        ? "MODUŁ PRZYPOMNIEŃ AKTYWNY"
+        : "MODUŁ PRZYPOMNIEŃ W GOTOWOŚCI";
+
+    $("patrol-status").previousElementSibling
+        .classList.toggle("active", active);
+}
+
+function checkPatrolReminders(now) {
+    if (!isShiftActive(now)) return;
+
+    const minute = now.getMinutes();
+    const key = getReminderKey(now);
+
+    // OBCHÓD: pięć minut po pełnej godzinie.
+    if (
+        patrolEnabled &&
+        minute === 5 &&
+        lastPatrolReminder !== key
+    ) {
+        lastPatrolReminder = key;
+
+        playTone(650, 0.15);
+
+        speak(
+            "Uwaga. Czas na obchód obiektu. Proszę rozpocząć kontrolę wyznaczonej trasy."
+        );
+
+        showToast(
+            "OBCHÓD OBIEKTU • Czas rozpocząć kontrolę."
+        );
+    }
+
+    // MELDUNEK: każda pełna godzina zegarowa.
+    if (
+        reportEnabled &&
+        minute === 0 &&
+        lastReportReminder !== key
+    ) {
+        lastReportReminder = key;
+
+        playTone(900, 0.15);
+
+        speak(
+            "Przypomnienie. Czas na obowiązkowy meldunek obecności na posterunku."
+        );
+
+        showToast(
+            "MELDUNEK • Czas potwierdzić obecność na posterunku."
+        );
+    }
+}
+
+function togglePatrol(enabled) {
+    patrolEnabled = enabled;
+
+    savePreferences();
+    updatePatrolInterface();
+
+    showToast(
+        enabled
+            ? "Przypomnienia o obchodach aktywowane."
+            : "Przypomnienia o obchodach wyłączone."
+    );
+}
+
+function toggleReport(enabled) {
+    reportEnabled = enabled;
+
+    savePreferences();
+    updatePatrolInterface();
+
+    showToast(
+        enabled
+            ? "Przypomnienia o meldunkach aktywowane."
+            : "Przypomnienia o meldunkach wyłączone."
+    );
+}
+
+/* ==========================================
+   LIVE PAYROLL
+   ========================================== */
 
 function updateEarnings(now) {
     if (!shiftStart || !shiftEnd) {
@@ -470,20 +572,13 @@ function updateEarnings(now) {
         )
     );
 
-    // Stawka za jedną sekundę.
     const perSecond = hourlyRate / 3600;
 
-    // Wynik wyliczamy z łącznego czasu, a nie dodajemy
-    // zaokrąglonych kwot w pętli.
     const earned = workedSeconds * perSecond;
-
     const projected = totalSeconds * perSecond;
 
-    $("earned-money").textContent =
-        formatMoney(earned, 4);
-
-    $("projected-money").textContent =
-        formatMoney(projected);
+    $("earned-money").textContent = formatMoney(earned, 4);
+    $("projected-money").textContent = formatMoney(projected);
 
     $("rate-display").textContent =
         formatMoney(hourlyRate) + "/h";
@@ -495,7 +590,9 @@ function updateEarnings(now) {
         `+${formatMoney(perSecond, 6)} / SEKUNDĘ`;
 }
 
-/* KONFIGURACJA SŁUŻBY */
+/* ==========================================
+   KONFIGURACJA SŁUŻBY
+   ========================================== */
 
 function saveSettings() {
     const startValue = $("start-input").value;
@@ -544,6 +641,9 @@ function saveSettings() {
     previousRemaining = shiftEnd.getTime() - Date.now();
     lastAnnouncement = "";
 
+    lastPatrolReminder = "";
+    lastReportReminder = "";
+
     localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
@@ -552,9 +652,6 @@ function saveSettings() {
             rate: hourlyRate
         })
     );
-
-    $("settings-message").textContent =
-        "KONFIGURACJA ZAPISANA • LIVE MONITORING AKTYWNY";
 
     document.querySelectorAll(".preset-btn").forEach(btn => {
         btn.classList.remove("active");
@@ -602,7 +699,9 @@ function startNow() {
     saveSettings();
 }
 
-/* GŁÓWNY TIMER */
+/* ==========================================
+   GŁÓWNY TIMER
+   ========================================== */
 
 function updateTimer() {
     const now = new Date();
@@ -643,9 +742,7 @@ function updateTimer() {
     );
 
     $("progress-fill").style.width = `${progress}%`;
-
-    $("progress-percent").textContent =
-        `${Math.floor(progress)}%`;
+    $("progress-percent").textContent = `${Math.floor(progress)}%`;
 
     $("start-display").textContent =
         `START: ${formatTime(shiftStart)} • ${formatDate(shiftStart)}`;
@@ -653,14 +750,12 @@ function updateTimer() {
     $("end-display").textContent =
         `KONIEC: ${formatTime(shiftEnd)} • ${formatDate(shiftEnd)}`;
 
-    $("total-time").textContent =
-        formatDuration(total);
-
-    $("elapsed-time")?.textContent;
+    $("total-time").textContent = formatDuration(total);
 
     updateEarnings(now);
 
     checkAnnouncements(remaining, now);
+    checkPatrolReminders(now);
 
     if (remaining <= 0) {
         $("days").textContent = "00";
@@ -688,8 +783,7 @@ function updateTimer() {
             notifyCompletion();
         }
 
-        $("settings-message").textContent =
-            "SŁUŻBA ZAKOŃCZONA.";
+        $("settings-message").textContent = "SŁUŻBA ZAKOŃCZONA.";
 
     } else {
         $("completion-message").classList.remove("show");
@@ -702,7 +796,9 @@ function updateTimer() {
     }
 }
 
-/* POWIADOMIENIA SYSTEMOWE */
+/* ==========================================
+   POWIADOMIENIA SYSTEMOWE
+   ========================================== */
 
 function notifyCompletion() {
     if (
@@ -739,7 +835,9 @@ async function enableNotifications() {
     }
 }
 
-/* PEŁNY EKRAN */
+/* ==========================================
+   PEŁNY EKRAN
+   ========================================== */
 
 async function toggleFullscreen() {
     try {
@@ -753,13 +851,17 @@ async function toggleFullscreen() {
     }
 }
 
-/* PREFERENCJE */
+/* ==========================================
+   ZAPIS PREFERENCJI
+   ========================================== */
 
 function savePreferences() {
     localStorage.setItem(
         PREFS_KEY,
         JSON.stringify({
-            soundEnabled
+            soundEnabled,
+            patrolEnabled,
+            reportEnabled
         })
     );
 }
@@ -771,11 +873,16 @@ function loadPreferences() {
         );
 
         soundEnabled = prefs.soundEnabled !== false;
+        patrolEnabled = prefs.patrolEnabled === true;
+        reportEnabled = prefs.reportEnabled === true;
 
     } catch {
         soundEnabled = true;
+        patrolEnabled = false;
+        reportEnabled = false;
     }
 
+    // Głos wymaga ponownej aktywacji po odświeżeniu.
     voiceEnabled = false;
 
     $("sound-state").textContent =
@@ -787,6 +894,8 @@ function loadPreferences() {
         "STANDBY",
         "System głosowy oczekuje na aktywację."
     );
+
+    updatePatrolInterface();
 }
 
 function toggleSound() {
@@ -804,7 +913,9 @@ function toggleSound() {
     if (soundEnabled) systemBeep();
 }
 
-/* WCZYTYWANIE USTAWIEŃ */
+/* ==========================================
+   WCZYTYWANIE KONFIGURACJI
+   ========================================== */
 
 function loadSettings() {
     try {
@@ -852,7 +963,9 @@ function loadSettings() {
     }
 }
 
-/* RESET SYSTEMU */
+/* ==========================================
+   RESET SYSTEMU
+   ========================================== */
 
 function resetSettings() {
     if (!confirm("Czy na pewno usunąć konfigurację służby?")) {
@@ -863,13 +976,15 @@ function resetSettings() {
 
     shiftStart = null;
     shiftEnd = null;
-
-    hourlyRate = Number($("rate-input").value) || 34;
+    hourlyRate = 34;
 
     alarmPlayed = false;
     shiftStartAnnounced = false;
     previousRemaining = null;
     lastAnnouncement = "";
+
+    lastPatrolReminder = "";
+    lastReportReminder = "";
 
     if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
@@ -906,16 +1021,28 @@ function resetSettings() {
     showToast("Konfiguracja służby wyczyszczona.");
 }
 
-/* OBSŁUGA PRZYCISKÓW */
+/* ==========================================
+   OBSŁUGA PRZYCISKÓW
+   ========================================== */
 
 $("save-btn").addEventListener("click", saveSettings);
 $("now-btn").addEventListener("click", startNow);
+
 $("voice-btn").addEventListener("click", activateVoice);
 $("voice-test-btn").addEventListener("click", testVoice);
+
 $("sound-btn").addEventListener("click", toggleSound);
 $("notification-btn").addEventListener("click", enableNotifications);
 $("fullscreen-btn").addEventListener("click", toggleFullscreen);
 $("reset-btn").addEventListener("click", resetSettings);
+
+$("patrol-enabled").addEventListener("change", event => {
+    togglePatrol(event.target.checked);
+});
+
+$("report-enabled").addEventListener("change", event => {
+    toggleReport(event.target.checked);
+});
 
 document.querySelectorAll(".preset-btn").forEach(button => {
     button.addEventListener("click", () => {
@@ -923,17 +1050,19 @@ document.querySelectorAll(".preset-btn").forEach(button => {
     });
 });
 
-/* START SYSTEMU */
+/* ==========================================
+   START SYSTEMU
+   ========================================== */
 
 loadPreferences();
 loadSettings();
 
 updateTimer();
 
-// Aktualizacja co sekundę.
+// Aktualizacja co sekundę na podstawie zegara systemowego.
 setInterval(updateTimer, 1000);
 
 console.info(
-    "%c SECURITY SHIFT TERMINAL V2.0 ONLINE ",
+    "%c SECURITY SHIFT TERMINAL V3.0 ONLINE ",
     "background:#071E2B;color:#28F0B5;padding:8px;font-weight:bold;"
 );
