@@ -1,11 +1,16 @@
 
 "use strict";
 
-const STORAGE_KEY = "securityShiftTerminalV32";
+/* ==========================================
+   SECURITY SHIFT TERMINAL 3.3
+   COMMANDER 01 / LIVE ENGINE
+========================================== */
 
-const $ = (id) => document.getElementById(id);
+const STORAGE_KEY = "securityShiftTerminalV33";
 
-const elements = {
+const $ = id => document.getElementById(id);
+
+const el = {
   clock: $("currentClock"),
   date: $("currentDate"),
   days: $("days"),
@@ -36,21 +41,30 @@ const elements = {
   voiceIndicator: $("voiceIndicator"),
   shiftStatus: $("shiftStatus"),
   settingsMessage: $("settingsMessage"),
-  systemStatus: $("systemStatus")
+  systemStatus: $("systemStatus"),
+  fullscreenBtn: $("fullscreenBtn")
 };
 
-let shift = { start: null, end: null, rate: 34 };
+let shift = {
+  start: null,
+  end: null,
+  rate: 34
+};
+
 let voiceEnabled = false;
 let selectedVoice = null;
 let speechQueue = [];
 let isSpeaking = false;
-let lastRandomMessage = "";
-let nextRandomAt = 0;
+
 let lastElapsedHour = 0;
 let lastReminderMinute = "";
-let lastShiftState = "";
+let lastShiftState = "initial";
+let lastRandomMessage = "";
+let nextRandomAt = 0;
+let previousRemaining = null;
 let shiftEndAnnounced = false;
-let voicesReady = false;
+
+const announcedMilestones = new Set();
 
 const funnyMessages = [
   "Operatorze, wykryto krytyczny niedobór kofeiny. Zalecam natychmiastową interwencję w postaci kawy.",
@@ -65,7 +79,7 @@ const funnyMessages = [
   "Proszę nie regulować odbiornika. To tylko ja. Twój ulubiony głos z centrum dowodzenia.",
   "Operatorze, wykryto anomalię. Czas płynie podejrzanie wolno. Trwa dalsza analiza.",
   "Jeśli służba wydaje się długa, proszę pamiętać, że dinozaury też kiedyś musiały czekać na koniec zmiany.",
-  "System podtrzymuje gotowość bojową. Operator może rozważyć uzupełnienie zapasów przekąsek.",
+  "System podtrzymuje gotowość operacyjną. Operator może rozważyć uzupełnienie zapasów przekąsek.",
   "Nie ma powodów do paniki. To tylko kolejna godzina. Prawdopodobnie jedna z wielu.",
   "Wykryto próbę negocjacji z zegarem. Informuję, że zegar nie przyjmuje reklamacji.",
   "Operatorze, utrzymuj czujność. Nawet ekspres do kawy może dziś potrzebować ochrony."
@@ -78,38 +92,94 @@ const hourMessages = [
   "Aktualizacja systemowa. Przepracowano {hour} godzin. Pozostało {remaining}."
 ];
 
-const milestoneMessages = {
-  3: "Zostały trzy godziny do zakończenia służby. Ostatnia prosta powoli się rozpoczyna.",
-  2: "Dwie godziny do końca. Operatorze, utrzymuj gotowość. Meta jest już blisko.",
-  1: "Pozostała ostatnia godzina służby. System odlicza końcowy etap.",
-  0.25: "Piętnaście minut do zakończenia służby. Przygotuj się do przekazania stanowiska."
-};
+const milestones = [
+  {
+    key: "3h",
+    ms: 3 * 60 * 60 * 1000,
+    text: "Zostały trzy godziny do zakończenia służby. Ostatnia prosta powoli się rozpoczyna."
+  },
+  {
+    key: "2h",
+    ms: 2 * 60 * 60 * 1000,
+    text: "Dwie godziny do końca. Operatorze, utrzymuj gotowość. Meta jest już blisko."
+  },
+  {
+    key: "1h",
+    ms: 60 * 60 * 1000,
+    text: "Pozostała ostatnia godzina służby. System odlicza końcowy etap."
+  },
+  {
+    key: "15m",
+    ms: 15 * 60 * 1000,
+    text: "Piętnaście minut do zakończenia służby. Przygotuj się do przekazania stanowiska."
+  }
+];
 
-function formatDateTime(value) {
-  if (!value) return "---";
-  return new Date(value).toLocaleString("pl-PL", {
-    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+/* ==========================================
+   DATA AND TIME HELPERS
+========================================== */
+
+function pad(value) {
+  return String(value).padStart(2, "0");
+}
+
+function validDate(value) {
+  return value instanceof Date && Number.isFinite(value.getTime());
+}
+
+function isValidShift() {
+  return validDate(shift.start) &&
+    validDate(shift.end) &&
+    shift.end.getTime() > shift.start.getTime();
+}
+
+function shiftIsActive() {
+  if (!isValidShift()) return false;
+
+  const now = Date.now();
+
+  return now >= shift.start.getTime() &&
+    now < shift.end.getTime();
+}
+
+function formatDateTime(date) {
+  if (!validDate(date)) return "---";
+
+  return date.toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 }
 
-function formatDuration(ms) {
-  const totalMinutes = Math.max(0, Math.floor(ms / 60000));
-  const hours = Math.floor(totalMinutes / 60);
+function formatDuration(milliseconds) {
+  const totalMinutes = Math.max(0, Math.floor(milliseconds / 60000));
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
   const minutes = totalMinutes % 60;
-  if (hours >= 24) {
-    const days = Math.floor(hours / 24);
-    return `${days}d ${hours % 24}h ${minutes}m`;
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${pad(minutes)}m`;
   }
-  return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+
+  return `${hours}h ${pad(minutes)}m`;
 }
 
-function formatRemaining(ms) {
-  const totalMinutes = Math.max(0, Math.ceil(ms / 60000));
+function formatRemaining(milliseconds) {
+  const totalMinutes = Math.max(0, Math.ceil(milliseconds / 60000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  if (hours === 0) return `${minutes} minut`;
-  if (minutes === 0) return `${hours} godzin`;
+  if (hours === 0) {
+    return `${minutes} minut`;
+  }
+
+  if (minutes === 0) {
+    return `${hours} godzin`;
+  }
+
   return `${hours} godzin i ${minutes} minut`;
 }
 
@@ -120,82 +190,136 @@ function formatMoney(value) {
   }) + " zł";
 }
 
-function loadSettings() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-
-    if (saved.start) {
-      shift.start = new Date(saved.start);
-      elements.shiftStart.value = toLocalInput(shift.start);
-    }
-    if (saved.end) {
-      shift.end = new Date(saved.end);
-      elements.shiftEnd.value = toLocalInput(shift.end);
-    }
-    if (Number.isFinite(Number(saved.rate))) {
-      shift.rate = Number(saved.rate);
-    }
-
-    elements.hourlyRate.value = shift.rate;
-    elements.patrolToggle.checked = saved.patrol === true;
-    elements.reportToggle.checked = saved.report === true;
-    elements.humorToggle.checked = saved.humor !== false;
-    elements.timeToggle.checked = saved.time !== false;
-  } catch (error) {
-    console.warn("Nie udało się wczytać ustawień.", error);
-  }
-}
-
 function toLocalInput(date) {
   const offset = date.getTimezoneOffset();
-  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
+
+  return new Date(date.getTime() - offset * 60000)
+    .toISOString()
+    .slice(0, 16);
 }
+
+/* ==========================================
+   LOCAL STORAGE
+========================================== */
 
 function saveSettings() {
   const data = {
-    start: shift.start ? shift.start.toISOString() : null,
-    end: shift.end ? shift.end.toISOString() : null,
+    start: validDate(shift.start) ? shift.start.toISOString() : null,
+    end: validDate(shift.end) ? shift.end.toISOString() : null,
     rate: shift.rate,
-    patrol: elements.patrolToggle.checked,
-    report: elements.reportToggle.checked,
-    humor: elements.humorToggle.checked,
-    time: elements.timeToggle.checked
+    patrol: el.patrolToggle.checked,
+    report: el.reportToggle.checked,
+    humor: el.humorToggle.checked,
+    time: el.timeToggle.checked
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn("Nie udało się zapisać ustawień:", error);
+  }
 }
+
+function loadSettings() {
+  let saved = {};
+
+  try {
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
+  } catch (error) {
+    console.warn("Nie udało się odczytać ustawień:", error);
+  }
+
+  const start = saved.start ? new Date(saved.start) : null;
+  const end = saved.end ? new Date(saved.end) : null;
+
+  shift.start = validDate(start) ? start : null;
+  shift.end = validDate(end) ? end : null;
+
+  const rate = Number(saved.rate);
+  shift.rate = Number.isFinite(rate) && rate >= 0 ? rate : 34;
+
+  el.shiftStart.value = shift.start ? toLocalInput(shift.start) : "";
+  el.shiftEnd.value = shift.end ? toLocalInput(shift.end) : "";
+  el.hourlyRate.value = shift.rate;
+
+  el.patrolToggle.checked = saved.patrol === true;
+  el.reportToggle.checked = saved.report === true;
+  el.humorToggle.checked = saved.humor !== false;
+  el.timeToggle.checked = saved.time !== false;
+
+  // Przy wczytaniu trwającej służby nie odtwarzamy starych komunikatów.
+  if (shiftIsActive()) {
+    lastElapsedHour = Math.floor(
+      (Date.now() - shift.start.getTime()) / 3600000
+    );
+    lastShiftState = "active";
+  } else {
+    lastElapsedHour = 0;
+    lastShiftState = "initial";
+  }
+
+  if (isValidShift()) {
+    previousRemaining = shift.end.getTime() - Date.now();
+  }
+}
+
+/* ==========================================
+   UI MESSAGES
+========================================== */
 
 function showMessage(message) {
-  elements.assistantMessage.textContent = "COMMANDER 01: " + message;
+  if (el.assistantMessage) {
+    el.assistantMessage.textContent = "COMMANDER 01: " + message;
+  }
 }
 
-function setSettingsMessage(message, error = false) {
-  elements.settingsMessage.textContent = message;
-  elements.settingsMessage.style.color = error ? "#ff7379" : "";
+function setSettingsMessage(message, isError = false) {
+  el.settingsMessage.textContent = message;
+  el.settingsMessage.style.color = isError ? "#ff7379" : "";
 }
 
-function isValidShift() {
-  return shift.start instanceof Date &&
-    shift.end instanceof Date &&
-    !Number.isNaN(shift.start.getTime()) &&
-    !Number.isNaN(shift.end.getTime()) &&
-    shift.end > shift.start;
+/* ==========================================
+   SHIFT CONFIGURATION
+========================================== */
+
+function resetShiftTracking() {
+  lastElapsedHour = shiftIsActive()
+    ? Math.floor((Date.now() - shift.start.getTime()) / 3600000)
+    : 0;
+
+  lastReminderMinute = "";
+  lastShiftState = shiftIsActive() ? "active" : "initial";
+  shiftEndAnnounced = false;
+  previousRemaining = isValidShift()
+    ? shift.end.getTime() - Date.now()
+    : null;
+
+  announcedMilestones.clear();
+  nextRandomAt = 0;
+  lastRandomMessage = "";
 }
 
 function saveShift() {
-  const startValue = elements.shiftStart.value;
-  const endValue = elements.shiftEnd.value;
-  const rateValue = Number(elements.hourlyRate.value);
+  const startValue = el.shiftStart.value;
+  const endValue = el.shiftEnd.value;
+  const rateValue = Number(el.hourlyRate.value);
 
   if (!startValue || !endValue) {
-    setSettingsMessage("Uzupełnij datę i godzinę rozpoczęcia oraz zakończenia.", true);
+    setSettingsMessage(
+      "Uzupełnij datę i godzinę rozpoczęcia oraz zakończenia.",
+      true
+    );
     return;
   }
 
   const start = new Date(startValue);
   const end = new Date(endValue);
 
-  if (end <= start) {
-    setSettingsMessage("Koniec służby musi przypadać po jej rozpoczęciu.", true);
+  if (!validDate(start) || !validDate(end) || end <= start) {
+    setSettingsMessage(
+      "Data zakończenia musi przypadać po rozpoczęciu służby.",
+      true
+    );
     return;
   }
 
@@ -204,144 +328,197 @@ function saveShift() {
     return;
   }
 
-  shift = { start, end, rate: rateValue };
-  lastElapsedHour = Math.max(0, Math.floor((Date.now() - start.getTime()) / 3600000));
-  lastReminderMinute = "";
-  shiftEndAnnounced = false;
-  lastShiftState = "";
+  shift = {
+    start,
+    end,
+    rate: rateValue
+  };
+
+  resetShiftTracking();
   saveSettings();
   render();
-  setSettingsMessage("Ustawienia zapisane. Terminal gotowy do pracy.");
-  showMessage("Konfiguracja służby została zaktualizowana. Jestem gotowy, operatorze.");
+
+  setSettingsMessage("Ustawienia zapisane. Terminal jest gotowy.");
+  showMessage("Konfiguracja służby została zaktualizowana, operatorze.");
+
+  if (voiceEnabled) {
+    enqueueSpeech(
+      "Nowy harmonogram służby został zapisany. System gotowy.",
+      3
+    );
+  }
 }
 
 function clearShift() {
-  shift = { start: null, end: null, rate: 34 };
-  elements.shiftStart.value = "";
-  elements.shiftEnd.value = "";
-  elements.hourlyRate.value = "34";
-  lastElapsedHour = 0;
-  lastReminderMinute = "";
-  shiftEndAnnounced = false;
-  lastShiftState = "";
+  shift = {
+    start: null,
+    end: null,
+    rate: 34
+  };
+
+  el.shiftStart.value = "";
+  el.shiftEnd.value = "";
+  el.hourlyRate.value = "34";
+
+  resetShiftTracking();
   saveSettings();
   render();
+
   setSettingsMessage("Dane służby zostały wyczyszczone.");
   showMessage("Dane służby usunięte. Oczekuję na nową konfigurację.");
+
+  if (voiceEnabled) {
+    enqueueSpeech("Harmonogram został wyczyszczony.", 3);
+  }
 }
+
+/* ==========================================
+   LIVE CLOCK
+========================================== */
 
 function updateClock() {
   const now = new Date();
-  elements.clock.textContent = now.toLocaleTimeString("pl-PL");
-  elements.date.textContent = now.toLocaleDateString("pl-PL", {
-    weekday: "long", day: "2-digit", month: "long", year: "numeric"
+
+  el.clock.textContent = now.toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+
+  el.date.textContent = now.toLocaleDateString("pl-PL", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
   }).toUpperCase();
 }
 
+/* ==========================================
+   LIVE COUNTDOWN AND EARNINGS
+========================================== */
+
 function render() {
   const now = Date.now();
+
   updateClock();
 
   if (!isValidShift()) {
-    elements.days.textContent = "00";
-    elements.hours.textContent = "00";
-    elements.minutes.textContent = "00";
-    elements.seconds.textContent = "00";
-    elements.progressText.textContent = "0%";
-    elements.progressFill.style.width = "0%";
-    elements.startDisplay.textContent = "---";
-    elements.endDisplay.textContent = "---";
-    elements.durationDisplay.textContent = "---";
-    elements.earnings.textContent = "0,00 zł";
-    elements.rateDisplay.textContent = `${shift.rate} zł/h`;
-    elements.workedDisplay.textContent = "0h 00m";
-    elements.shiftStatus.textContent = "NIEAKTYWNA";
-    elements.systemStatus.textContent = "GOTOWY";
+    el.days.textContent = "00";
+    el.hours.textContent = "00";
+    el.minutes.textContent = "00";
+    el.seconds.textContent = "00";
+
+    el.progressText.textContent = "0%";
+    el.progressFill.style.width = "0%";
+
+    el.startDisplay.textContent = "---";
+    el.endDisplay.textContent = "---";
+    el.durationDisplay.textContent = "---";
+
+    el.earnings.textContent = "0,00 zł";
+    el.rateDisplay.textContent = `${shift.rate.toFixed(2)} zł/h`;
+    el.workedDisplay.textContent = "0h 00m";
+
+    el.shiftStatus.textContent = "NIEAKTYWNA";
+    el.systemStatus.textContent = "GOTOWY";
+
     return;
   }
 
   const start = shift.start.getTime();
   const end = shift.end.getTime();
   const total = end - start;
+
   const elapsed = Math.max(0, Math.min(now - start, total));
   const remaining = Math.max(0, end - now);
-  const percent = Math.min(100, Math.max(0, (elapsed / total) * 100));
 
-  const totalSeconds = Math.floor(remaining / 1000);
+  const totalSeconds = Math.ceil(remaining / 1000);
+
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
-  elements.days.textContent = String(days).padStart(2, "0");
-  elements.hours.textContent = String(hours).padStart(2, "0");
-  elements.minutes.textContent = String(minutes).padStart(2, "0");
-  elements.seconds.textContent = String(seconds).padStart(2, "0");
+  const progress = Math.max(0, Math.min(100, (elapsed / total) * 100));
 
-  elements.progressText.textContent = `${percent.toFixed(1)}%`;
-  elements.progressFill.style.width = `${percent}%`;
-  elements.startDisplay.textContent = formatDateTime(shift.start);
-  elements.endDisplay.textContent = formatDateTime(shift.end);
-  elements.durationDisplay.textContent = formatDuration(total);
-  elements.rateDisplay.textContent = `${shift.rate.toFixed(2)} zł/h`;
-  elements.workedDisplay.textContent = formatDuration(elapsed);
+  el.days.textContent = pad(days);
+  el.hours.textContent = pad(hours);
+  el.minutes.textContent = pad(minutes);
+  el.seconds.textContent = pad(seconds);
 
-  const earned = (elapsed / 3600000) * shift.rate;
-  elements.earnings.textContent = formatMoney(earned);
+  el.progressText.textContent = `${progress.toFixed(1)}%`;
+  el.progressFill.style.width = `${progress}%`;
+
+  el.startDisplay.textContent = formatDateTime(shift.start);
+  el.endDisplay.textContent = formatDateTime(shift.end);
+  el.durationDisplay.textContent = formatDuration(total);
+
+  el.workedDisplay.textContent = formatDuration(elapsed);
+  el.rateDisplay.textContent = `${shift.rate.toFixed(2)} zł/h`;
+
+  const earnings = (elapsed / 3600000) * shift.rate;
+  el.earnings.textContent = formatMoney(earnings);
 
   if (now < start) {
-    elements.shiftStatus.textContent = "OCZEKIWANIE";
-    elements.systemStatus.textContent = "GOTOWY";
+    el.shiftStatus.textContent = "OCZEKIWANIE";
+    el.systemStatus.textContent = "GOTOWY";
   } else if (now < end) {
-    elements.shiftStatus.textContent = "AKTYWNA";
-    elements.systemStatus.textContent = "MONITORING";
+    el.shiftStatus.textContent = "AKTYWNA";
+    el.systemStatus.textContent = "MONITORING";
   } else {
-    elements.shiftStatus.textContent = "ZAKOŃCZONA";
-    elements.systemStatus.textContent = "GOTOWY";
+    el.shiftStatus.textContent = "ZAKOŃCZONA";
+    el.systemStatus.textContent = "GOTOWY";
   }
 }
 
-function shiftIsActive() {
-  const now = Date.now();
-  return isValidShift() && now >= shift.start.getTime() && now < shift.end.getTime();
-}
-
-/* VOICE ENGINE */
+/* ==========================================
+   SPEECH VOICE ENGINE
+========================================== */
 
 function getPolishVoice() {
-  const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  if (!("speechSynthesis" in window)) return null;
+
+  const voices = speechSynthesis.getVoices();
+
   if (!voices.length) return null;
 
-  const polish = voices.filter(voice => voice.lang && voice.lang.toLowerCase().startsWith("pl"));
-  if (!polish.length) return voices[0] || null;
+  const polishVoices = voices.filter(voice =>
+    voice.lang && voice.lang.toLowerCase().startsWith("pl")
+  );
 
-  const preferred = [
-    /paulina/i, /marek/i, /google.*polish/i, /polish/i,
-    /microsoft.*polski/i, /ewa/i, /zosia/i
+  if (!polishVoices.length) return voices[0] || null;
+
+  const preferredNames = [
+    /microsoft.*polish/i,
+    /google.*polish/i,
+    /polish/i,
+    /paulina/i,
+    /marek/i,
+    /ewa/i,
+    /zosia/i
   ];
 
-  for (const pattern of preferred) {
-    const found = polish.find(voice => pattern.test(voice.name));
-    if (found) return found;
+  for (const pattern of preferredNames) {
+    const match = polishVoices.find(voice => pattern.test(voice.name));
+    if (match) return match;
   }
 
-  return polish.find(voice => !voice.name.toLowerCase().includes("compact")) || polish[0];
+  return polishVoices[0];
 }
 
 function refreshVoices() {
   selectedVoice = getPolishVoice();
-  voicesReady = true;
 }
 
 if ("speechSynthesis" in window) {
   refreshVoices();
-  speechSynthesis.onvoiceschanged = refreshVoices;
+  speechSynthesis.addEventListener("voiceschanged", refreshVoices);
 }
 
 function updateVoiceUI() {
-  elements.voiceStatus.textContent = voiceEnabled ? "AKTYWNY" : "OCZEKUJE";
-  elements.voiceIndicator.classList.toggle("active", voiceEnabled);
-  elements.voiceBtn.textContent = voiceEnabled ? "WYŁĄCZ GŁOS" : "AKTYWUJ GŁOS";
+  el.voiceStatus.textContent = voiceEnabled ? "AKTYWNY" : "OCZEKUJE";
+  el.voiceIndicator.classList.toggle("active", voiceEnabled);
+  el.voiceBtn.textContent = voiceEnabled ? "WYŁĄCZ GŁOS" : "AKTYWUJ GŁOS";
 }
 
 function activateVoice() {
@@ -355,33 +532,41 @@ function activateVoice() {
   if (voiceEnabled) {
     refreshVoices();
     updateVoiceUI();
+
     showMessage("Kanał głosowy aktywny. COMMANDER 01 melduje gotowość.");
-    enqueueSpeech("COMMANDER 01 online. Operatorze, kanał komunikacyjny został aktywowany.", 3);
-    scheduleRandomMessage();
+
+    enqueueSpeech(
+      "COMMANDER 01 online. Operatorze, kanał komunikacyjny został aktywowany.",
+      3
+    );
+
+    nextRandomAt = Date.now() + 20 * 60000;
   } else {
     speechQueue = [];
     speechSynthesis.cancel();
     isSpeaking = false;
     nextRandomAt = 0;
+
     updateVoiceUI();
-    showMessage("Kanał głosowy wyłączony. Przypomnienia tekstowe pozostają aktywne.");
+    showMessage("Kanał głosowy wyłączony. Liczniki i przypomnienia nadal działają.");
   }
 }
 
-function enqueueSpeech(text, priority = 1) {
-  if (!voiceEnabled || !text) return;
+function enqueueSpeech(message, priority = 1) {
+  if (!voiceEnabled || !message) return;
 
-  // Ważne komunikaty mają pierwszeństwo przed żartami.
+  // Wiadomości o wysokim priorytecie trafiają przed żartami.
   if (priority >= 2) {
     speechQueue = speechQueue.filter(item => item.priority >= priority);
-    if (isSpeaking && priority >= 3) {
-      speechSynthesis.cancel();
-      isSpeaking = false;
-    }
   }
 
-  speechQueue.push({ text, priority });
+  speechQueue.push({
+    text: message,
+    priority
+  });
+
   speechQueue.sort((a, b) => b.priority - a.priority);
+
   processSpeechQueue();
 }
 
@@ -393,6 +578,7 @@ function processSpeechQueue() {
   const utterance = new SpeechSynthesisUtterance(item.text);
 
   selectedVoice = selectedVoice || getPolishVoice();
+
   if (selectedVoice) {
     utterance.voice = selectedVoice;
     utterance.lang = selectedVoice.lang || "pl-PL";
@@ -411,6 +597,7 @@ function processSpeechQueue() {
     isSpeaking = false;
     processSpeechQueue();
   };
+
   utterance.onerror = () => {
     isSpeaking = false;
     processSpeechQueue();
@@ -431,30 +618,45 @@ function testVoice() {
   );
 }
 
+/* ==========================================
+   RANDOM HUMOR MESSAGES
+========================================== */
+
 function scheduleRandomMessage() {
   nextRandomAt = Date.now() + (20 + Math.random() * 20) * 60000;
 }
 
 function announceRandomMessage() {
-  if (!voiceEnabled || !elements.humorToggle.checked || !shiftIsActive()) return;
-  if (document.hidden) return;
+  if (!voiceEnabled || !el.humorToggle.checked || !shiftIsActive()) return;
 
-  let message = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
-  if (funnyMessages.length > 1) {
-    while (message === lastRandomMessage) {
-      message = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
-    }
+  // Nie odtwarzamy żartów, gdy użytkownik nie ma otwartej karty.
+  if (document.hidden) {
+    scheduleRandomMessage();
+    return;
+  }
+
+  let message = funnyMessages[
+    Math.floor(Math.random() * funnyMessages.length)
+  ];
+
+  while (message === lastRandomMessage && funnyMessages.length > 1) {
+    message = funnyMessages[
+      Math.floor(Math.random() * funnyMessages.length)
+    ];
   }
 
   lastRandomMessage = message;
+
   enqueueSpeech(message, 0);
   scheduleRandomMessage();
 }
 
-/* RAPORTY CZASOWE */
+/* ==========================================
+   HOURLY TIME REPORTS
+========================================== */
 
 function announceElapsedHour() {
-  if (!voiceEnabled || !elements.timeToggle.checked || !shiftIsActive()) return;
+  if (!voiceEnabled || !el.timeToggle.checked || !shiftIsActive()) return;
 
   const elapsedMs = Date.now() - shift.start.getTime();
   const elapsedHours = Math.floor(elapsedMs / 3600000);
@@ -463,47 +665,54 @@ function announceElapsedHour() {
 
   lastElapsedHour = elapsedHours;
 
-  const remaining = formatRemaining(shift.end.getTime() - Date.now());
-  const template = hourMessages[Math.floor(Math.random() * hourMessages.length)];
-  const hourWord = elapsedHours === 1 ? "jedna" : String(elapsedHours);
-
-  enqueueSpeech(
-    template.replace("{hour}", hourWord).replace("{remaining}", remaining),
-    2
+  const remaining = formatRemaining(
+    shift.end.getTime() - Date.now()
   );
 
-  const hoursLeft = (shift.end.getTime() - Date.now()) / 3600000;
-  const milestone = Object.keys(milestoneMessages)
-    .map(Number)
-    .find(value => Math.abs(hoursLeft - value) < (1 / 120));
-
-  if (milestone !== undefined) {
-    enqueueSpeech(milestoneMessages[milestone], 2);
-  }
-}
-
-function checkMilestones() {
-  if (!voiceEnabled || !elements.timeToggle.checked || !shiftIsActive()) return;
-
-  const remaining = shift.end.getTime() - Date.now();
-  const hoursLeft = remaining / 3600000;
-
-  const thresholds = [
-    { value: 3, key: "3h", text: milestoneMessages[3] },
-    { value: 2, key: "2h", text: milestoneMessages[2] },
-    { value: 1, key: "1h", text: milestoneMessages[1] },
-    { value: 0.25, key: "15m", text: milestoneMessages[0.25] }
+  const template = hourMessages[
+    Math.floor(Math.random() * hourMessages.length)
   ];
 
-  thresholds.forEach(item => {
-    if (hoursLeft <= item.value && !milestoneAnnounced.has(item.key)) {
-      milestoneAnnounced.add(item.key);
-      enqueueSpeech(item.text, 2);
-    }
-  });
+  const message = template
+    .replace("{hour}", String(elapsedHours))
+    .replace("{remaining}", remaining);
+
+  enqueueSpeech(message, 2);
 }
 
-const milestoneAnnounced = new Set();
+/* ==========================================
+   MILESTONE ANNOUNCEMENTS
+========================================== */
+
+function checkMilestones() {
+  if (!voiceEnabled || !el.timeToggle.checked || !shiftIsActive()) {
+    return;
+  }
+
+  const remaining = shift.end.getTime() - Date.now();
+
+  if (previousRemaining === null) {
+    previousRemaining = remaining;
+    return;
+  }
+
+  milestones.forEach(milestone => {
+    const crossed =
+      previousRemaining > milestone.ms &&
+      remaining <= milestone.ms;
+
+    if (crossed && !announcedMilestones.has(milestone.key)) {
+      announcedMilestones.add(milestone.key);
+      enqueueSpeech(milestone.text, 2);
+    }
+  });
+
+  previousRemaining = remaining;
+}
+
+/* ==========================================
+   SHIFT START AND END ANNOUNCEMENTS
+========================================== */
 
 function checkShiftTransitions() {
   if (!isValidShift()) return;
@@ -514,114 +723,214 @@ function checkShiftTransitions() {
 
   if (now >= start && now < end && lastShiftState !== "active") {
     lastShiftState = "active";
+
+    lastElapsedHour = Math.floor((now - start) / 3600000);
+    previousRemaining = end - now;
+
     if (voiceEnabled) {
-      enqueueSpeech("Rozpoczęcie służby. Operatorze, system przechodzi w tryb aktywny. Życzę spokojnej i bezpiecznej zmiany.", 3);
+      enqueueSpeech(
+        "Rozpoczęcie służby. Operatorze, system przechodzi w tryb aktywny. Życzę spokojnej i bezpiecznej zmiany.",
+        3
+      );
     }
   }
 
   if (now >= end && !shiftEndAnnounced) {
     shiftEndAnnounced = true;
     lastShiftState = "ended";
+
     if (voiceEnabled) {
-      enqueueSpeech("Służba zakończona. Dobra robota, operatorze. System przechodzi w tryb oczekiwania. Czas na odpoczynek.", 3);
+      enqueueSpeech(
+        "Służba zakończona. Dobra robota, operatorze. System przechodzi w tryb oczekiwania. Czas na odpoczynek.",
+        3
+      );
     }
   }
 }
 
-/* PRZYPOMNIENIA GODZINOWE */
+/* ==========================================
+   HOURLY REMINDERS
+========================================== */
 
 function checkReminders() {
   if (!shiftIsActive()) return;
 
   const now = new Date();
-  const minuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
+
+  const minuteKey = [
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes()
+  ].join("-");
 
   if (minuteKey === lastReminderMinute) return;
+
   lastReminderMinute = minuteKey;
 
-  if (now.getMinutes() === 0 && elements.reportToggle.checked) {
-    notify("Raport obecności", "Operatorze, przypomnienie o raporcie obecności.");
-    enqueueSpeech("Przypomnienie. Czas na raport obecności.", 2);
+  if (now.getMinutes() === 0 && el.reportToggle.checked) {
+    notify(
+      "Raport obecności",
+      "Operatorze, przypomnienie o raporcie obecności."
+    );
+
+    enqueueSpeech(
+      "Przypomnienie. Czas na raport obecności.",
+      2
+    );
   }
 
-  if (now.getMinutes() === 5 && elements.patrolToggle.checked) {
-    notify("Obchód / patrol", "Operatorze, przypomnienie o obchodzie obiektu.");
-    enqueueSpeech("Przypomnienie. Czas na obchód lub patrol obiektu.", 2);
+  if (now.getMinutes() === 5 && el.patrolToggle.checked) {
+    notify(
+      "Obchód / patrol",
+      "Operatorze, przypomnienie o obchodzie obiektu."
+    );
+
+    enqueueSpeech(
+      "Przypomnienie. Czas na obchód lub patrol obiektu.",
+      2
+    );
   }
 }
 
 function notify(title, body) {
-  try {
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification(title, { body });
-    }
-  } catch (error) {
-    console.warn("Powiadomienie niedostępne.", error);
-  }
-}
-
-async function requestNotificationPermission() {
   if (!("Notification" in window)) return;
-  if (Notification.permission === "default") {
-    try {
-      await Notification.requestPermission();
-    } catch (error) {
-      console.warn("Nie udało się uzyskać zgody na powiadomienia.", error);
-    }
+  if (Notification.permission !== "granted") return;
+
+  try {
+    new Notification(title, { body });
+  } catch (error) {
+    console.warn("Powiadomienie niedostępne:", error);
   }
 }
 
-/* URUCHOMIENIE */
+/* ==========================================
+   FULLSCREEN
+========================================== */
 
-elements.saveShift.addEventListener("click", saveShift);
-elements.clearShift.addEventListener("click", clearShift);
-elements.voiceBtn.addEventListener("click", activateVoice);
-elements.testVoiceBtn.addEventListener("click", testVoice);
-
-elements.fullscreenBtn.addEventListener("click", () => {
+function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen?.();
+    document.documentElement.requestFullscreen?.().catch(error => {
+      console.warn("Nie udało się uruchomić pełnego ekranu:", error);
+    });
   } else {
-    document.exitFullscreen?.();
+    document.exitFullscreen?.().catch(error => {
+      console.warn("Nie udało się opuścić pełnego ekranu:", error);
+    });
   }
-});
+}
 
-[
-  elements.patrolToggle,
-  elements.reportToggle,
-  elements.humorToggle,
-  elements.timeToggle
-].forEach(toggle => {
-  toggle.addEventListener("change", () => {
-    saveSettings();
-    if (toggle === elements.humorToggle && toggle.checked) {
-      scheduleRandomMessage();
+/* ==========================================
+   EVENT LISTENERS
+========================================== */
+
+function bindEvents() {
+  el.saveShift.addEventListener("click", saveShift);
+  el.clearShift.addEventListener("click", clearShift);
+  el.voiceBtn.addEventListener("click", activateVoice);
+  el.testVoiceBtn.addEventListener("click", testVoice);
+  el.fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+  [
+    el.patrolToggle,
+    el.reportToggle,
+    el.humorToggle,
+    el.timeToggle
+  ].forEach(toggle => {
+    toggle.addEventListener("change", () => {
+      saveSettings();
+
+      if (toggle === el.humorToggle) {
+        if (toggle.checked) {
+          scheduleRandomMessage();
+        } else {
+          nextRandomAt = 0;
+          speechQueue = speechQueue.filter(item => item.priority > 0);
+        }
+      }
+    });
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && voiceEnabled && el.humorToggle.checked) {
+      if (!nextRandomAt) scheduleRandomMessage();
     }
   });
-});
+}
 
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && voiceEnabled && !nextRandomAt) {
-    scheduleRandomMessage();
-  }
-});
+/* ==========================================
+   MAIN LIVE ENGINE
+========================================== */
 
-loadSettings();
-refreshVoices();
-updateVoiceUI();
-render();
+function liveUpdate() {
+  const now = Date.now();
 
-setInterval(() => {
   render();
   checkShiftTransitions();
   checkReminders();
   announceElapsedHour();
   checkMilestones();
 
-  if (voiceEnabled && elements.humorToggle.checked && shiftIsActive()) {
-    if (!nextRandomAt) scheduleRandomMessage();
-    if (Date.now() >= nextRandomAt) announceRandomMessage();
-  }
-}, 1000);
+  if (
+    voiceEnabled &&
+    el.humorToggle.checked &&
+    shiftIsActive()
+  ) {
+    if (!nextRandomAt) {
+      scheduleRandomMessage();
+    }
 
-requestNotificationPermission();
+    if (now >= nextRandomAt) {
+      announceRandomMessage();
+    }
+  } else if (!shiftIsActive()) {
+    nextRandomAt = 0;
+  }
+
+  if (!shiftIsActive() && isValidShift()) {
+    previousRemaining = shift.end.getTime() - now;
+  }
+}
+
+/* ==========================================
+   START APPLICATION
+========================================== */
+
+function initializeApp() {
+  const missing = Object.entries(el)
+    .filter(([, element]) => !element)
+    .map(([name]) => name);
+
+  if (missing.length) {
+    console.error(
+      "SECURITY TERMINAL: Brakuje elementów HTML:",
+      missing.join(", ")
+    );
+
+    return;
+  }
+
+  loadSettings();
+  refreshVoices();
+  updateVoiceUI();
+  bindEvents();
+
+  render();
+
+  // Ustawiamy punkt odniesienia dla raportów czasu.
+  if (isValidShift()) {
+    previousRemaining = shift.end.getTime() - Date.now();
+  }
+
+  // Odświeżanie niezależne od głosu i komunikatów.
+  // 250 ms zapewnia płynne odświeżanie interfejsu.
+  setInterval(liveUpdate, 250);
+
+  // Pierwsza aktualizacja natychmiast po uruchomieniu.
+  liveUpdate();
+
+  console.info("SECURITY SHIFT TERMINAL 3.3: SYSTEM ONLINE");
+}
+
+initializeApp();
