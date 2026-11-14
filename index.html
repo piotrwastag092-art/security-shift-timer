@@ -2,388 +2,303 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#030B14">
-    <meta name="description" content="Personal Security Shift Terminal">
-    <title>SECURITY SHIFT TERMINAL</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07111c">
+  <title>SECURITY SHIFT TERMINAL</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <div class="scanlines"></div>
 
-<div class="background-grid"></div>
-<div class="ambient ambient-one"></div>
-<div class="ambient ambient-two"></div>
-
-<header class="topbar">
-    <div class="brand">
-        <div class="brand-mark">
-            <span></span><span></span><span></span>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="securitas-mark" aria-label="Trzy czerwone kropki Securitas">
+          <span></span><span></span><span></span>
         </div>
-        <div class="brand-name">
-            <strong>SECURITAS</strong>
-            <small>PERSONAL SECURITY TERMINAL</small>
+        <div class="brand-copy">
+          <strong>SECURITY</strong>
+          <span>SHIFT TERMINAL</span>
         </div>
-    </div>
+      </div>
 
-    <div class="top-status">
+      <div class="sidebar-status">
         <span class="status-dot"></span>
-        <span>SYSTEM ONLINE</span>
-        <span class="version">V3.0</span>
-    </div>
-</header>
+        SYSTEM OPERACYJNY
+      </div>
 
-<main class="dashboard">
+      <div class="nav-label">NAWIGACJA</div>
+      <nav class="side-nav">
+        <a class="nav-link active" href="#dashboard">
+          <span class="nav-icon">◈</span> Centrum dowodzenia
+        </a>
+        <a class="nav-link" href="#shift-settings">
+          <span class="nav-icon">◷</span> Konfiguracja służby
+        </a>
+        <a class="nav-link" href="#assistant">
+          <span class="nav-icon">◉</span> Robo-Security AI
+        </a>
+        <a class="nav-link" href="#reminders">
+          <span class="nav-icon">⌁</span> Przypomnienia
+        </a>
+      </nav>
 
-    <section class="intro">
-        <div class="eyebrow">
-            <span class="eyebrow-line"></span>
-            SECURITY OPERATIONS CENTER
+      <div class="sidebar-bottom">
+        <div class="mini-system-card">
+          <div class="mini-card-top">
+            <span>STATUS TERMINALA</span>
+            <span class="live-pill">LIVE</span>
+          </div>
+          <div class="system-indicator">
+            <span class="status-dot"></span>
+            Wszystkie systemy gotowe
+          </div>
+          <div class="system-line"><span></span></div>
+          <small>SECURE CONNECTION / LOCAL</small>
         </div>
-        <h1>SHIFT <span>CONTROL</span></h1>
-        <p>Osobisty system monitorowania służby ochrony</p>
-    </section>
+        <div class="sidebar-footer">
+          <span>SECURITY SHIFT TERMINAL</span>
+          <span>VERSION 3.1</span>
+        </div>
+      </div>
+    </aside>
 
-    <section class="system-strip">
+    <main class="main-content">
+      <header class="topbar">
         <div>
-            <span class="strip-label">LOCAL TIME</span>
-            <strong id="current-clock">00:00:00</strong>
+          <div class="breadcrumb">SECURITY OPERATIONS <span>/</span> DASHBOARD</div>
+          <h1>CENTRUM <span>DOWODZENIA</span></h1>
         </div>
-        <div>
-            <span class="strip-label">CURRENT DATE</span>
-            <strong id="current-date">--</strong>
+        <div class="topbar-right">
+          <div class="clock-box">
+            <span class="top-label">CZAS SYSTEMOWY</span>
+            <strong id="currentClock">--:--:--</strong>
+            <small id="currentDate">Ładowanie daty...</small>
+          </div>
+          <button class="icon-button" id="fullscreenBtn" title="Pełny ekran">⛶</button>
         </div>
-        <div>
-            <span class="strip-label">SYSTEM STATUS</span>
-            <strong class="online-text">● OPERATIONAL</strong>
-        </div>
-    </section>
+      </header>
 
-    <!-- COUNTDOWN -->
+      <section class="welcome-strip">
+        <div class="welcome-left">
+          <div class="welcome-symbol">●</div>
+          <div>
+            <strong>TERMINAL GOTOWY DO PRACY</strong>
+            <span>Panel osobisty pracownika ochrony · Tryb operacyjny</span>
+          </div>
+        </div>
+        <div class="connection-status">
+          <span class="status-dot"></span>
+          POŁĄCZENIE AKTYWNE
+        </div>
+      </section>
 
-    <section class="panel countdown-panel">
-        <div class="panel-heading">
+      <section id="dashboard" class="dashboard-grid">
+        <div class="panel countdown-panel">
+          <div class="panel-heading">
             <div>
-                <span class="section-index">01 / DUTY MONITORING</span>
-                <h2>COUNTDOWN TIMER</h2>
+              <span class="eyebrow">01 / GŁÓWNY MODUŁ</span>
+              <h2>ODLICZANIE SŁUŻBY</h2>
             </div>
-            <span class="live-badge"><span></span> LIVE</span>
-        </div>
+            <span class="panel-tag">SHIFT TIMER</span>
+          </div>
 
-        <div class="countdown-label">
-            CZAS POZOSTAŁY DO ZAKOŃCZENIA SŁUŻBY
-        </div>
+          <div class="timer-status">
+            <span class="status-dot" id="shiftStatusDot"></span>
+            <span id="shiftStatus">OCZEKIWANIE NA SŁUŻBĘ</span>
+          </div>
 
-        <div class="timer-grid">
+          <div class="countdown" id="countdown">
             <div class="time-unit">
-                <div class="time-number" id="days">00</div>
-                <span>DNI</span>
+              <strong id="days">00</strong>
+              <span>DNI</span>
             </div>
-            <div class="time-separator">:</div>
+            <i>:</i>
             <div class="time-unit">
-                <div class="time-number" id="hours">00</div>
-                <span>GODZINY</span>
+              <strong id="hours">00</strong>
+              <span>GODZIN</span>
             </div>
-            <div class="time-separator">:</div>
+            <i>:</i>
             <div class="time-unit">
-                <div class="time-number" id="minutes">00</div>
-                <span>MINUTY</span>
+              <strong id="minutes">00</strong>
+              <span>MINUT</span>
             </div>
-            <div class="time-separator">:</div>
+            <i>:</i>
             <div class="time-unit">
-                <div class="time-number seconds" id="seconds">00</div>
-                <span>SEKUNDY</span>
+              <strong id="seconds">00</strong>
+              <span>SEKUND</span>
             </div>
-        </div>
+          </div>
 
-        <div class="progress-section">
+          <div class="progress-area">
             <div class="progress-info">
-                <span>POSTĘP ZMIANY</span>
-                <strong id="progress-percent">0%</strong>
+              <span>POSTĘP SŁUŻBY</span>
+              <strong id="progressText">0%</strong>
             </div>
             <div class="progress-track">
-                <div class="progress-fill" id="progress-fill"></div>
+              <div class="progress-fill" id="progressFill"></div>
             </div>
+          </div>
+
+          <div class="shift-meta">
+            <div><span>ROZPOCZĘCIE</span><strong id="startDisplay">--:--</strong></div>
+            <div><span>ZAKOŃCZENIE</span><strong id="endDisplay">--:--</strong></div>
+            <div><span>CZAS SŁUŻBY</span><strong id="durationDisplay">--</strong></div>
+          </div>
+
+          <div class="timer-decoration">SST // SECURE SHIFT MONITOR</div>
         </div>
 
-        <div class="shift-info">
-            <div>
-                <span>ROZPOCZĘCIE</span>
-                <strong id="start-display">START: --:--</strong>
+        <div class="right-stack">
+          <div class="panel earnings-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">02 / WYNAGRODZENIE</span>
+                <h2>LICZNIK ZAROBKÓW</h2>
+              </div>
+              <span class="earnings-icon">₿</span>
             </div>
-            <div>
-                <span>ZAKOŃCZENIE</span>
-                <strong id="end-display">KONIEC: --:--</strong>
+            <span class="earnings-caption">SZACOWANE WYNAGRODZENIE ZA TĘ SŁUŻBĘ</span>
+            <div class="earnings-value"><strong id="earnings">0,00</strong><span>PLN</span></div>
+            <div class="earnings-divider"></div>
+            <div class="earnings-details">
+              <div><span>Stawka godzinowa</span><strong id="rateDisplay">34,00 zł</strong></div>
+              <div><span>Przepracowany czas</span><strong id="workedDisplay">0h 00m</strong></div>
             </div>
+          </div>
+
+          <div class="panel quick-status-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">03 / MONITORING</span>
+                <h2>STATUS SYSTEMU</h2>
+              </div>
+            </div>
+            <div class="quick-status-row">
+              <span class="status-icon">◉</span>
+              <span>Przypomnienia</span>
+              <strong id="reminderStatus">AKTYWNE</strong>
+            </div>
+            <div class="quick-status-row">
+              <span class="status-icon">◈</span>
+              <span>Asystent głosowy</span>
+              <strong id="voiceStatus">GOTOWY</strong>
+            </div>
+            <div class="quick-status-row">
+              <span class="status-icon">◌</span>
+              <span>Tryb terminala</span>
+              <strong class="green-text">ONLINE</strong>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div class="completion-message" id="completion-message">
-            <div class="completion-symbol">✓</div>
-            <h2>MISSION COMPLETED</h2>
-            <p>Twoja służba została zakończona. Dobra robota!</p>
-        </div>
-    </section>
-
-    <!-- EARNINGS -->
-
-    <section class="panel earnings-panel">
+      <section id="shift-settings" class="panel settings-panel">
         <div class="panel-heading">
-            <div>
-                <span class="section-index">02 / FINANCIAL MONITORING</span>
-                <h2>LIVE EARNINGS</h2>
-            </div>
-            <span class="live-badge green"><span></span> LIVE PAYROLL</span>
+          <div>
+            <span class="eyebrow">04 / USTAWIENIA</span>
+            <h2>KONFIGURACJA SŁUŻBY</h2>
+          </div>
+          <span class="panel-tag">SHIFT CONFIG</span>
         </div>
-
-        <div class="earnings-main">
-            <div class="earnings-label">TWOJE ZAROBKI W TEJ ZMIANIE</div>
-            <div class="earnings-value" id="earned-money">0,0000 zł</div>
-            <div class="earnings-rate" id="per-second-rate">+0,009444 zł / SEKUNDĘ</div>
-        </div>
-
-        <div class="earnings-cards">
-            <div class="earnings-card">
-                <span>STAWKA GODZINOWA</span>
-                <strong id="rate-display">34,00 zł/h</strong>
-            </div>
-            <div class="earnings-card">
-                <span>PRZEPRACOWANY CZAS</span>
-                <strong id="paid-time">00:00:00</strong>
-            </div>
-            <div class="earnings-card projected">
-                <span>PRZEWIDYWANY ZAROBEK</span>
-                <strong id="projected-money">0,00 zł</strong>
-            </div>
-            <div class="earnings-card">
-                <span>CAŁKOWITY CZAS ZMIANY</span>
-                <strong id="total-time">--</strong>
-            </div>
-        </div>
-
-        <div class="earnings-note">
-            <span class="note-dot"></span>
-            Wynagrodzenie naliczane według pełnych przepracowanych sekund.
-        </div>
-    </section>
-
-    <!-- SETTINGS -->
-
-    <section class="panel settings-panel">
-        <div class="panel-heading">
-            <div>
-                <span class="section-index">03 / CONFIGURATION</span>
-                <h2>KONFIGURACJA SŁUŻBY</h2>
-            </div>
-            <span class="settings-icon">⚙</span>
-        </div>
-
         <div class="settings-grid">
-            <label class="field">
-                <span>DATA I GODZINA ROZPOCZĘCIA</span>
-                <input type="datetime-local" id="start-input">
-            </label>
-
-            <label class="field">
-                <span>DATA I GODZINA ZAKOŃCZENIA</span>
-                <input type="datetime-local" id="end-input">
-            </label>
-
-            <label class="field rate-field">
-                <span>STAWKA GODZINOWA (PLN)</span>
-                <div class="rate-input-wrap">
-                    <input type="number" id="rate-input"
-                           min="0" max="100000" step="0.01" value="34">
-                    <span>PLN / H</span>
-                </div>
-            </label>
+          <label class="field">
+            <span>DATA I GODZINA ROZPOCZĘCIA</span>
+            <input type="datetime-local" id="shiftStart">
+          </label>
+          <label class="field">
+            <span>DATA I GODZINA ZAKOŃCZENIA</span>
+            <input type="datetime-local" id="shiftEnd">
+          </label>
+          <label class="field">
+            <span>STAWKA GODZINOWA (ZŁ)</span>
+            <input type="number" id="hourlyRate" min="0" step="0.01" value="34">
+          </label>
         </div>
-
-        <div class="preset-heading">SZYBKIE USTAWIENIA ZMIANY</div>
-        <div class="preset-buttons">
-            <button class="preset-btn" data-hours="8">8H</button>
-            <button class="preset-btn" data-hours="12">12H</button>
-            <button class="preset-btn" data-hours="24">24H</button>
-        </div>
-
         <div class="settings-actions">
-            <button class="primary-btn" id="save-btn">ZAPISZ KONFIGURACJĘ</button>
-            <button class="secondary-btn" id="now-btn">ROZPOCZNIJ TERAZ</button>
+          <button class="primary-button" id="saveShift">ZAPISZ USTAWIENIA <span>→</span></button>
+          <button class="secondary-button" id="clearShift">WYCZYŚĆ SŁUŻBĘ</button>
+          <span id="saveMessage" class="save-message"></span>
         </div>
+      </section>
 
-        <p class="settings-message" id="settings-message">
-            Ustaw parametry swojej służby.
-        </p>
-    </section>
-
-    <!-- ROBO SECURITY -->
-
-    <section class="panel voice-panel">
-        <div class="panel-heading">
+      <section class="lower-grid">
+        <div id="reminders" class="panel reminders-panel">
+          <div class="panel-heading">
             <div>
-                <span class="section-index">04 / ARTIFICIAL INTELLIGENCE</span>
-                <h2>ROBO-SECURITY AI</h2>
+              <span class="eyebrow">05 / PROCEDURY</span>
+              <h2>PRZYPOMNIENIA SŁUŻBOWE</h2>
             </div>
-            <span class="ai-badge">AI VOICE</span>
+            <span class="panel-tag">AUTOMATION</span>
+          </div>
+          <div class="reminder-item">
+            <div class="reminder-symbol red-symbol">05</div>
+            <div class="reminder-copy">
+              <strong>OBCHÓD / PATROL</strong>
+              <span>Przypomnienie 5 minut po każdej pełnej godzinie.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="patrolToggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="reminder-item">
+            <div class="reminder-symbol">00</div>
+            <div class="reminder-copy">
+              <strong>RAPORT OBECNOŚCI</strong>
+              <span>Przypomnienie o każdej pełnej godzinie.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="reportToggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="reminder-note">
+            <span>ⓘ</span> Przypomnienia działają wyłącznie podczas aktywnej służby.
+          </div>
         </div>
 
-        <div class="voice-content">
-            <div class="robot-visual">
-                <div class="robot-orbit"></div>
-                <div class="robot-icon">
-                    <div class="robot-eyes"><span></span><span></span></div>
-                    <div class="robot-mouth"></div>
-                </div>
-            </div>
-
-            <div class="voice-info">
-                <strong>POLSKI SYSTEM KOMUNIKATÓW GŁOSOWYCH</strong>
-                <p id="voice-message">System głosowy oczekuje na aktywację.</p>
-                <span class="voice-state" id="voice-state">STANDBY</span>
-            </div>
-        </div>
-
-        <div class="voice-actions">
-            <button class="primary-btn" id="voice-btn">AKTYWUJ GŁOS</button>
-            <button class="secondary-btn" id="voice-test-btn">TESTUJ GŁOS</button>
-        </div>
-
-        <p class="voice-description">
-            Komunikaty o pozostałym czasie służby, obchodach,
-            meldunkach i zakończeniu zmiany.
-        </p>
-    </section>
-
-    <!-- PATROL & CHECKPOINT CONTROL -->
-
-    <section class="panel patrol-panel">
-        <div class="panel-heading">
+        <div id="assistant" class="panel assistant-panel">
+          <div class="panel-heading">
             <div>
-                <span class="section-index">05 / SECURITY OPERATIONS</span>
-                <h2>PATROL & CHECKPOINT CONTROL</h2>
+              <span class="eyebrow">06 / INTELIGENTNY MODUŁ</span>
+              <h2>ROBO-SECURITY AI</h2>
             </div>
-            <span class="patrol-icon">⌖</span>
-        </div>
-
-        <p class="patrol-description">
-            Opcjonalne przypomnienia głosowe o obchodach
-            i obowiązkowych meldunkach obecności.
-        </p>
-
-        <div class="patrol-option">
-            <div class="patrol-option-info">
-                <div class="patrol-option-title">
-                    <span class="patrol-symbol">◉</span>
-                    <div>
-                        <strong>PRZYPOMNIENIE O OBCHODACH</strong>
-                        <small>5 minut po każdej pełnej godzinie</small>
-                    </div>
-                </div>
-
-                <label class="switch">
-                    <input type="checkbox" id="patrol-enabled">
-                    <span class="switch-slider"></span>
-                </label>
+            <div class="ai-orb"><span></span></div>
+          </div>
+          <div class="assistant-screen">
+            <div class="assistant-screen-top">
+              <span class="status-dot"></span> ASYSTENT GOTOWY
+              <span class="assistant-version">AI / VOICE INTERFACE</span>
             </div>
-
-            <div class="patrol-details" id="patrol-details">
-                <div class="schedule-time">
-                    <span>GODZINA PRZYPOMNIENIA</span>
-                    <strong>XX:05</strong>
-                </div>
-                <div class="reminder-example">
-                    <span>ROBO-SECURITY AI</span>
-                    <p>
-                        „Uwaga. Czas na obchód obiektu.
-                        Proszę rozpocząć kontrolę wyznaczonej trasy.”
-                    </p>
-                </div>
-            </div>
+            <p id="assistantMessage">Witaj. System Robo-Security jest gotowy do działania. Miłej i spokojnej służby!</p>
+          </div>
+          <div class="assistant-controls">
+            <button class="primary-button" id="voiceBtn">URUCHOM GŁOS <span>◖</span></button>
+            <button class="secondary-button" id="testVoiceBtn">TEST GŁOSU</button>
+          </div>
+          <div class="assistant-footnote">Asystent korzysta z syntezy mowy przeglądarki.</div>
         </div>
+      </section>
 
-        <div class="patrol-divider"></div>
-
-        <div class="patrol-option">
-            <div class="patrol-option-info">
-                <div class="patrol-option-title">
-                    <span class="patrol-symbol">◎</span>
-                    <div>
-                        <strong>OBOWIĄZKOWY MELDUNEK</strong>
-                        <small>O każdej pełnej godzinie zegarowej</small>
-                    </div>
-                </div>
-
-                <label class="switch">
-                    <input type="checkbox" id="report-enabled">
-                    <span class="switch-slider"></span>
-                </label>
-            </div>
-
-            <div class="patrol-details" id="report-details">
-                <div class="schedule-time">
-                    <span>GODZINA PRZYPOMNIENIA</span>
-                    <strong>XX:00</strong>
-                </div>
-                <div class="reminder-example">
-                    <span>ROBO-SECURITY AI</span>
-                    <p>
-                        „Przypomnienie. Czas na obowiązkowy
-                        meldunek obecności na posterunku.”
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="patrol-footer">
-            <span class="patrol-status-dot"></span>
-            <span id="patrol-status">MODUŁ PRZYPOMNIEŃ W GOTOWOŚCI</span>
-        </div>
-    </section>
-
-    <!-- SYSTEM TOOLS -->
-
-    <section class="panel tools-panel">
-        <div class="panel-heading">
-            <div>
-                <span class="section-index">06 / SYSTEM UTILITIES</span>
-                <h2>NARZĘDZIA SYSTEMOWE</h2>
-            </div>
-        </div>
-
-        <div class="tools-grid">
-            <button class="tool-btn" id="sound-btn">
-                <span>♫</span>
-                DŹWIĘK: <strong id="sound-state">ON</strong>
-            </button>
-
-            <button class="tool-btn" id="notification-btn">
-                <span>♧</span>
-                POWIADOMIENIA
-            </button>
-
-            <button class="tool-btn" id="fullscreen-btn">
-                <span>⛶</span>
-                PEŁNY EKRAN
-            </button>
-
-            <button class="tool-btn danger" id="reset-btn">
-                <span>↻</span>
-                RESET USTAWIEŃ
-            </button>
-        </div>
-    </section>
-
-    <footer class="system-footer">
+      <footer class="main-footer">
         <div class="footer-brand">
-            <span class="footer-dots">●●●</span>
-            SECURITY SHIFT TERMINAL
+          <div class="footer-dots"><span></span><span></span><span></span></div>
+          <span>SECURITY SHIFT TERMINAL</span>
         </div>
-        <span>PERSONAL DUTY SYSTEM © <span id="year"></span></span>
-    </footer>
+        <span>PERSONAL SECURITY OPERATIONS INTERFACE</span>
+        <span id="footerTime">SYSTEM TIME: --:--:--</span>
+      </footer>
+    </main>
+  </div>
 
-</main>
-
-<div class="toast" id="toast"></div>
-
-<script src="script.js"></script>
+  <div id="toast" class="toast"></div>
+  <script src="script.js"></script>
 </body>
 </html>
