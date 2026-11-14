@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#041b2a">
-    <meta name="description" content="Osobisty Security Shift Timer. Kontroluj czas swojej służby.">
-    <title>Security Shift Timer</title>
+    <meta name="description" content="Security Shift Timer – osobisty licznik służby i zarobków.">
+    <title>SECURITY SHIFT TIMER 2.0</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,64 +15,47 @@
 
 <header class="topbar">
     <div class="brand">
-        <div class="brand-dots">
-            <span></span><span></span><span></span>
-        </div>
+        <div class="brand-dots"><span></span><span></span><span></span></div>
         <div class="brand-name">SECURITY<span>SHIFT TIMER</span></div>
     </div>
-
     <div class="system-status">
-        <span class="status-indicator"></span>
-        SYSTEM ONLINE
+        <span class="status-indicator"></span> SYSTEM ONLINE
     </div>
 </header>
 
 <main class="dashboard">
 
     <section class="hero">
-        <div class="section-label">
-            <span class="red-line"></span>
-            OSOBISTY SYSTEM KONTROLI SŁUŻBY
-        </div>
-
+        <div class="section-label"><span class="red-line"></span> OSOBISTY SYSTEM KONTROLI SŁUŻBY</div>
         <h1>TWÓJ CZAS.<br><span>TWOJA SŁUŻBA.</span></h1>
         <p class="subtitle">Każda sekunda przybliża Cię do końca zmiany.</p>
     </section>
 
     <section class="timer-panel">
-
         <div class="panel-top">
             <div>
                 <span class="small-label">POZOSTAŁY CZAS SŁUŻBY</span>
                 <h2>ODLICZANIE DO KOŃCA ZMIANY</h2>
             </div>
-            <div class="live-badge">
-                <span></span> LIVE
-            </div>
+            <div class="live-badge"><span></span> LIVE</div>
         </div>
 
-        <div class="timer" id="timer">
+        <div class="timer">
             <div class="time-unit">
                 <div class="time-number" id="days">00</div>
                 <div class="time-label">DNI</div>
             </div>
-
             <div class="time-separator">:</div>
-
             <div class="time-unit">
                 <div class="time-number" id="hours">00</div>
                 <div class="time-label">GODZINY</div>
             </div>
-
             <div class="time-separator">:</div>
-
             <div class="time-unit">
                 <div class="time-number" id="minutes">00</div>
                 <div class="time-label">MINUTY</div>
             </div>
-
             <div class="time-separator">:</div>
-
             <div class="time-unit">
                 <div class="time-number seconds" id="seconds">00</div>
                 <div class="time-label">SEKUNDY</div>
@@ -83,11 +66,9 @@
             <span>POSTĘP SŁUŻBY</span>
             <strong id="progress-percent">0%</strong>
         </div>
-
         <div class="progress-track">
             <div class="progress-fill" id="progress-fill"></div>
         </div>
-
         <div class="progress-details">
             <span id="start-display">START: --:--</span>
             <span id="end-display">KONIEC: --:--</span>
@@ -98,36 +79,66 @@
             <h2>SŁUŻBA ZAKOŃCZONA!</h2>
             <p>Dobra robota. Możesz opuścić posterunek.</p>
         </div>
+    </section>
 
+    <section class="earnings-panel">
+        <div class="earnings-header">
+            <div>
+                <span class="small-label">FINANSE • NALICZANIE W CZASIE RZECZYWISTYM</span>
+                <h2>TWÓJ ZAROBEK</h2>
+            </div>
+            <div class="money-icon"> zł </div>
+        </div>
+
+        <div class="earnings-main">
+            <div>
+                <span class="earnings-caption">ZAROBIONE DO TEJ SEKUNDY</span>
+                <div class="earnings-value" id="earned-money">0,00 zł</div>
+                <span class="earnings-live"><span></span> NALICZANIE LIVE</span>
+            </div>
+            <div class="earnings-estimate">
+                <span>PROGNOZA ZA CAŁĄ ZMIANĘ</span>
+                <strong id="projected-money">0,00 zł</strong>
+            </div>
+        </div>
+
+        <div class="earnings-divider"></div>
+
+        <div class="earnings-bottom">
+            <div>
+                <span>STAWKA GODZINOWA</span>
+                <strong id="rate-display">34,00 zł/h</strong>
+            </div>
+            <div>
+                <span>WYPRACOWANY CZAS</span>
+                <strong id="paid-time">00:00:00</strong>
+            </div>
+        </div>
+        <p class="money-note">Szacunkowa kwota według wpisanej stawki. Nie uwzględnia przerw niepłatnych ani potrąceń.</p>
     </section>
 
     <section class="stats-grid">
-
         <div class="stat-card">
             <div class="stat-icon">◷</div>
             <span class="stat-label">CZAS SŁUŻBY</span>
             <strong id="total-time">--</strong>
             <small>Zaplanowany czas</small>
         </div>
-
         <div class="stat-card">
             <div class="stat-icon">◉</div>
             <span class="stat-label">CZAS PRACY</span>
             <strong id="elapsed-time">00:00</strong>
             <small>Już za Tobą</small>
         </div>
-
         <div class="stat-card">
             <div class="stat-icon">⌚</div>
             <span class="stat-label">AKTUALNY CZAS</span>
             <strong id="current-clock">--:--:--</strong>
             <small id="current-date">---</small>
         </div>
-
     </section>
 
     <section class="settings-panel">
-
         <div class="settings-heading">
             <div>
                 <span class="small-label">KONFIGURACJA</span>
@@ -152,51 +163,50 @@
                 ZAKOŃCZENIE SŁUŻBY
                 <input type="datetime-local" id="end-input">
             </label>
+
+            <label>
+                STAWKA GODZINOWA (ZŁ)
+                <input type="number" id="rate-input" min="0" step="0.01" placeholder="np. 34.00" value="34">
+            </label>
         </div>
 
         <div class="settings-actions">
-            <button class="primary-btn" id="save-btn">
-                ZAPISZ USTAWIENIA
-            </button>
-            <button class="secondary-btn" id="now-btn">
-                ROZPOCZNIJ TERAZ
-            </button>
+            <button class="primary-btn" id="save-btn">ZAPISZ USTAWIENIA</button>
+            <button class="secondary-btn" id="now-btn">ROZPOCZNIJ TERAZ</button>
         </div>
 
-        <p class="settings-note" id="settings-message">
-            Ustaw godziny swojej zmiany, aby rozpocząć odliczanie.
-        </p>
+        <p class="settings-note" id="settings-message">Ustaw godziny i stawkę, aby rozpocząć odliczanie.</p>
+    </section>
 
+    <section class="voice-panel">
+        <div class="voice-avatar">
+            <div class="voice-orbit"></div>
+            <span>AI</span>
+        </div>
+        <div class="voice-info">
+            <span class="small-label">SECURITY ARTIFICIAL INTELLIGENCE</span>
+            <h2>ROBO-SECURITY</h2>
+            <p id="voice-message">System głosowy oczekuje na aktywację.</p>
+        </div>
+        <div class="voice-state" id="voice-state">STANDBY</div>
     </section>
 
     <section class="tools-panel">
-        <button class="tool-btn" id="fullscreen-btn">
-            <span>⛶</span> PEŁNY EKRAN
-        </button>
-
-        <button class="tool-btn" id="sound-btn">
-            <span id="sound-icon">♪</span> DŹWIĘK: <span id="sound-state">WŁĄCZONY</span>
-        </button>
-
-        <button class="tool-btn" id="notification-btn">
-            <span>♧</span> POWIADOMIENIA
-        </button>
-
-        <button class="tool-btn reset-btn" id="reset-btn">
-            <span>↻</span> WYCZYŚĆ USTAWIENIA
-        </button>
+        <button class="tool-btn" id="fullscreen-btn">⛶ PEŁNY EKRAN</button>
+        <button class="tool-btn" id="sound-btn">♪ DŹWIĘK: <span id="sound-state">ON</span></button>
+        <button class="tool-btn" id="voice-btn">◖ AKTYWUJ GŁOS</button>
+        <button class="tool-btn" id="notification-btn">♧ POWIADOMIENIA</button>
+        <button class="tool-btn reset-btn" id="reset-btn">↻ WYCZYŚĆ USTAWIENIA</button>
     </section>
 
 </main>
 
 <footer>
     <div class="footer-brand">
-        <div class="brand-dots small-dots">
-            <span></span><span></span><span></span>
-        </div>
+        <div class="brand-dots small-dots"><span></span><span></span><span></span></div>
         <span>SECURITY SHIFT TIMER</span>
     </div>
-    <p>PERSONAL DUTY CONTROL SYSTEM</p>
+    <p>PERSONAL DUTY CONTROL SYSTEM • SMART PAYROLL EDITION</p>
     <p class="footer-copy">© <span id="year"></span> • STWORZONE DLA LUDZI CHRONIĄCYCH INNYCH</p>
 </footer>
 
@@ -205,3 +215,4 @@
 <script src="script.js"></script>
 </body>
 </html>
+
