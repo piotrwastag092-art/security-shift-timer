@@ -4,215 +4,367 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#041b2a">
-    <meta name="description" content="Security Shift Timer – osobisty licznik służby i zarobków.">
-    <title>SECURITY SHIFT TIMER 2.0</title>
+    <meta name="theme-color" content="#030B14">
+    <meta name="description" content="Personal Security Shift Terminal">
+    <title>SECURITY SHIFT TERMINAL</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="background-grid"></div>
+<div class="ambient ambient-one"></div>
+<div class="ambient ambient-two"></div>
 
 <header class="topbar">
     <div class="brand">
-        <div class="brand-dots"><span></span><span></span><span></span></div>
-        <div class="brand-name">SECURITY<span>SHIFT TIMER</span></div>
+        <div class="brand-mark">
+            <span></span><span></span><span></span>
+        </div>
+        <div class="brand-name">
+            <strong>SECURITAS</strong>
+            <small>PERSONAL SECURITY TERMINAL</small>
+        </div>
     </div>
-    <div class="system-status">
-        <span class="status-indicator"></span> SYSTEM ONLINE
+
+    <div class="top-status">
+        <span class="status-dot"></span>
+        <span>SYSTEM ONLINE</span>
+        <span class="version">V2.0</span>
     </div>
 </header>
 
 <main class="dashboard">
 
-    <section class="hero">
-        <div class="section-label"><span class="red-line"></span> OSOBISTY SYSTEM KONTROLI SŁUŻBY</div>
-        <h1>TWÓJ CZAS.<br><span>TWOJA SŁUŻBA.</span></h1>
-        <p class="subtitle">Każda sekunda przybliża Cię do końca zmiany.</p>
+    <section class="intro">
+        <div class="eyebrow">
+            <span class="eyebrow-line"></span>
+            SECURITY OPERATIONS CENTER
+        </div>
+
+        <h1>SHIFT <span>CONTROL</span></h1>
+
+        <p>Osobisty system monitorowania służby ochrony</p>
     </section>
 
-    <section class="timer-panel">
-        <div class="panel-top">
-            <div>
-                <span class="small-label">POZOSTAŁY CZAS SŁUŻBY</span>
-                <h2>ODLICZANIE DO KOŃCA ZMIANY</h2>
-            </div>
-            <div class="live-badge"><span></span> LIVE</div>
+    <section class="system-strip">
+        <div>
+            <span class="strip-label">LOCAL TIME</span>
+            <strong id="current-clock">00:00:00</strong>
         </div>
 
-        <div class="timer">
+        <div>
+            <span class="strip-label">CURRENT DATE</span>
+            <strong id="current-date">--</strong>
+        </div>
+
+        <div>
+            <span class="strip-label">SYSTEM STATUS</span>
+            <strong class="online-text">● OPERATIONAL</strong>
+        </div>
+    </section>
+
+    <!-- COUNTDOWN -->
+
+    <section class="panel countdown-panel">
+
+        <div class="panel-heading">
+            <div>
+                <span class="section-index">01 / DUTY MONITORING</span>
+                <h2>COUNTDOWN TIMER</h2>
+            </div>
+
+            <span class="live-badge">
+                <span></span> LIVE
+            </span>
+        </div>
+
+        <div class="countdown-label">
+            CZAS POZOSTAŁY DO ZAKOŃCZENIA SŁUŻBY
+        </div>
+
+        <div class="timer-grid">
             <div class="time-unit">
                 <div class="time-number" id="days">00</div>
-                <div class="time-label">DNI</div>
+                <span>DNI</span>
             </div>
+
             <div class="time-separator">:</div>
+
             <div class="time-unit">
                 <div class="time-number" id="hours">00</div>
-                <div class="time-label">GODZINY</div>
+                <span>GODZINY</span>
             </div>
+
             <div class="time-separator">:</div>
+
             <div class="time-unit">
                 <div class="time-number" id="minutes">00</div>
-                <div class="time-label">MINUTY</div>
+                <span>MINUTY</span>
             </div>
+
             <div class="time-separator">:</div>
+
             <div class="time-unit">
                 <div class="time-number seconds" id="seconds">00</div>
-                <div class="time-label">SEKUNDY</div>
+                <span>SEKUNDY</span>
             </div>
         </div>
 
-        <div class="progress-info">
-            <span>POSTĘP SŁUŻBY</span>
-            <strong id="progress-percent">0%</strong>
+        <div class="progress-section">
+            <div class="progress-info">
+                <span>POSTĘP ZMIANY</span>
+                <strong id="progress-percent">0%</strong>
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
         </div>
-        <div class="progress-track">
-            <div class="progress-fill" id="progress-fill"></div>
-        </div>
-        <div class="progress-details">
-            <span id="start-display">START: --:--</span>
-            <span id="end-display">KONIEC: --:--</span>
+
+        <div class="shift-info">
+            <div>
+                <span>ROZPOCZĘCIE</span>
+                <strong id="start-display">START: --:--</strong>
+            </div>
+
+            <div>
+                <span>ZAKOŃCZENIE</span>
+                <strong id="end-display">KONIEC: --:--</strong>
+            </div>
         </div>
 
         <div class="completion-message" id="completion-message">
-            <div class="completion-icon">✓</div>
-            <h2>SŁUŻBA ZAKOŃCZONA!</h2>
-            <p>Dobra robota. Możesz opuścić posterunek.</p>
+            <div class="completion-symbol">✓</div>
+            <h2>MISSION COMPLETED</h2>
+            <p>Twoja służba została zakończona. Dobra robota!</p>
         </div>
+
     </section>
 
-    <section class="earnings-panel">
-        <div class="earnings-header">
+    <!-- EARNINGS -->
+
+    <section class="panel earnings-panel">
+
+        <div class="panel-heading">
             <div>
-                <span class="small-label">FINANSE • NALICZANIE W CZASIE RZECZYWISTYM</span>
-                <h2>TWÓJ ZAROBEK</h2>
+                <span class="section-index">02 / FINANCIAL MONITORING</span>
+                <h2>LIVE EARNINGS</h2>
             </div>
-            <div class="money-icon"> zł </div>
+
+            <span class="live-badge green">
+                <span></span> LIVE PAYROLL
+            </span>
         </div>
 
         <div class="earnings-main">
-            <div>
-                <span class="earnings-caption">ZAROBIONE DO TEJ SEKUNDY</span>
-                <div class="earnings-value" id="earned-money">0,00 zł</div>
-                <span class="earnings-live"><span></span> NALICZANIE LIVE</span>
+            <div class="earnings-label">TWOJE ZAROBKI W TEJ ZMIANIE</div>
+
+            <div class="earnings-value" id="earned-money">
+                0,0000 zł
             </div>
-            <div class="earnings-estimate">
-                <span>PROGNOZA ZA CAŁĄ ZMIANĘ</span>
-                <strong id="projected-money">0,00 zł</strong>
+
+            <div class="earnings-rate" id="per-second-rate">
+                +0,009444 zł / SEKUNDĘ
             </div>
         </div>
 
-        <div class="earnings-divider"></div>
+        <div class="earnings-cards">
 
-        <div class="earnings-bottom">
-            <div>
+            <div class="earnings-card">
                 <span>STAWKA GODZINOWA</span>
                 <strong id="rate-display">34,00 zł/h</strong>
             </div>
-            <div>
-                <span>WYPRACOWANY CZAS</span>
+
+            <div class="earnings-card">
+                <span>PRZEPRACOWANY CZAS</span>
                 <strong id="paid-time">00:00:00</strong>
             </div>
-        </div>
-        <p class="money-note">Szacunkowa kwota według wpisanej stawki. Nie uwzględnia przerw niepłatnych ani potrąceń.</p>
-    </section>
 
-    <section class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">◷</div>
-            <span class="stat-label">CZAS SŁUŻBY</span>
-            <strong id="total-time">--</strong>
-            <small>Zaplanowany czas</small>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">◉</div>
-            <span class="stat-label">CZAS PRACY</span>
-            <strong id="elapsed-time">00:00</strong>
-            <small>Już za Tobą</small>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">⌚</div>
-            <span class="stat-label">AKTUALNY CZAS</span>
-            <strong id="current-clock">--:--:--</strong>
-            <small id="current-date">---</small>
-        </div>
-    </section>
-
-    <section class="settings-panel">
-        <div class="settings-heading">
-            <div>
-                <span class="small-label">KONFIGURACJA</span>
-                <h2>USTAWIENIA SŁUŻBY</h2>
+            <div class="earnings-card projected">
+                <span>PRZEWIDYWANY ZAROBEK</span>
+                <strong id="projected-money">0,00 zł</strong>
             </div>
-            <div class="settings-icon">⚙</div>
+
+            <div class="earnings-card">
+                <span>CAŁKOWITY CZAS ZMIANY</span>
+                <strong id="total-time">--</strong>
+            </div>
+
         </div>
 
-        <div class="presets">
-            <button class="preset-btn" data-hours="8">8 GODZIN</button>
-            <button class="preset-btn" data-hours="12">12 GODZIN</button>
-            <button class="preset-btn" data-hours="24">24 GODZINY</button>
+        <div class="earnings-note">
+            <span class="note-dot"></span>
+            Wynagrodzenie naliczane według pełnych przepracowanych sekund.
         </div>
 
-        <div class="form-grid">
-            <label>
-                ROZPOCZĘCIE SŁUŻBY
+    </section>
+
+    <!-- SHIFT SETTINGS -->
+
+    <section class="panel settings-panel">
+
+        <div class="panel-heading">
+            <div>
+                <span class="section-index">03 / CONFIGURATION</span>
+                <h2>KONFIGURACJA SŁUŻBY</h2>
+            </div>
+
+            <span class="settings-icon">⚙</span>
+        </div>
+
+        <div class="settings-grid">
+
+            <label class="field">
+                <span>DATA I GODZINA ROZPOCZĘCIA</span>
                 <input type="datetime-local" id="start-input">
             </label>
 
-            <label>
-                ZAKOŃCZENIE SŁUŻBY
+            <label class="field">
+                <span>DATA I GODZINA ZAKOŃCZENIA</span>
                 <input type="datetime-local" id="end-input">
             </label>
 
-            <label>
-                STAWKA GODZINOWA (ZŁ)
-                <input type="number" id="rate-input" min="0" step="0.01" placeholder="np. 34.00" value="34">
+            <label class="field rate-field">
+                <span>STAWKA GODZINOWA (PLN)</span>
+                <div class="rate-input-wrap">
+                    <input type="number" id="rate-input"
+                           min="0" max="100000" step="0.01"
+                           value="34">
+                    <span>PLN / H</span>
+                </div>
             </label>
+
+        </div>
+
+        <div class="preset-heading">SZYBKIE USTAWIENIA ZMIANY</div>
+
+        <div class="preset-buttons">
+            <button class="preset-btn" data-hours="8">8H</button>
+            <button class="preset-btn" data-hours="12">12H</button>
+            <button class="preset-btn" data-hours="24">24H</button>
         </div>
 
         <div class="settings-actions">
-            <button class="primary-btn" id="save-btn">ZAPISZ USTAWIENIA</button>
-            <button class="secondary-btn" id="now-btn">ROZPOCZNIJ TERAZ</button>
+            <button class="primary-btn" id="save-btn">
+                ZAPISZ KONFIGURACJĘ
+            </button>
+
+            <button class="secondary-btn" id="now-btn">
+                ROZPOCZNIJ TERAZ
+            </button>
         </div>
 
-        <p class="settings-note" id="settings-message">Ustaw godziny i stawkę, aby rozpocząć odliczanie.</p>
+        <p class="settings-message" id="settings-message">
+            Ustaw parametry swojej służby.
+        </p>
+
     </section>
 
-    <section class="voice-panel">
-        <div class="voice-avatar">
-            <div class="voice-orbit"></div>
-            <span>AI</span>
+    <!-- ROBO SECURITY -->
+
+    <section class="panel voice-panel">
+
+        <div class="panel-heading">
+            <div>
+                <span class="section-index">04 / ARTIFICIAL INTELLIGENCE</span>
+                <h2>ROBO-SECURITY AI</h2>
+            </div>
+
+            <span class="ai-badge">AI VOICE</span>
         </div>
-        <div class="voice-info">
-            <span class="small-label">SECURITY ARTIFICIAL INTELLIGENCE</span>
-            <h2>ROBO-SECURITY</h2>
-            <p id="voice-message">System głosowy oczekuje na aktywację.</p>
+
+        <div class="voice-content">
+
+            <div class="robot-visual">
+                <div class="robot-orbit"></div>
+                <div class="robot-icon">
+                    <div class="robot-eyes">
+                        <span></span><span></span>
+                    </div>
+                    <div class="robot-mouth"></div>
+                </div>
+            </div>
+
+            <div class="voice-info">
+                <strong>POLSKI SYSTEM KOMUNIKATÓW GŁOSOWYCH</strong>
+                <p id="voice-message">
+                    System głosowy oczekuje na aktywację.
+                </p>
+
+                <span class="voice-state" id="voice-state">
+                    STANDBY
+                </span>
+            </div>
+
         </div>
-        <div class="voice-state" id="voice-state">STANDBY</div>
+
+        <div class="voice-actions">
+            <button class="primary-btn voice-btn" id="voice-btn">
+                AKTYWUJ GŁOS
+            </button>
+
+            <button class="secondary-btn" id="voice-test-btn">
+                TESTUJ GŁOS
+            </button>
+        </div>
+
+        <p class="voice-description">
+            Komunikaty o pozostałym czasie służby, godzinnych etapach
+            i zakończeniu zmiany.
+        </p>
+
     </section>
 
-    <section class="tools-panel">
-        <button class="tool-btn" id="fullscreen-btn">⛶ PEŁNY EKRAN</button>
-        <button class="tool-btn" id="sound-btn">♪ DŹWIĘK: <span id="sound-state">ON</span></button>
-        <button class="tool-btn" id="voice-btn">◖ AKTYWUJ GŁOS</button>
-        <button class="tool-btn" id="notification-btn">♧ POWIADOMIENIA</button>
-        <button class="tool-btn reset-btn" id="reset-btn">↻ WYCZYŚĆ USTAWIENIA</button>
+    <!-- SYSTEM TOOLS -->
+
+    <section class="panel tools-panel">
+
+        <div class="panel-heading">
+            <div>
+                <span class="section-index">05 / SYSTEM UTILITIES</span>
+                <h2>NARZĘDZIA SYSTEMOWE</h2>
+            </div>
+        </div>
+
+        <div class="tools-grid">
+
+            <button class="tool-btn" id="sound-btn">
+                <span>♫</span>
+                DŹWIĘK: <strong id="sound-state">ON</strong>
+            </button>
+
+            <button class="tool-btn" id="notification-btn">
+                <span>♧</span>
+                POWIADOMIENIA
+            </button>
+
+            <button class="tool-btn" id="fullscreen-btn">
+                <span>⛶</span>
+                PEŁNY EKRAN
+            </button>
+
+            <button class="tool-btn danger" id="reset-btn">
+                <span>↻</span>
+                RESET USTAWIEŃ
+            </button>
+
+        </div>
+
     </section>
+
+    <div class="system-footer">
+        <div class="footer-brand">
+            <span class="footer-dots">●●●</span>
+            SECURITY SHIFT TERMINAL
+        </div>
+
+        <span>PERSONAL DUTY SYSTEM © <span id="year"></span></span>
+    </div>
 
 </main>
-
-<footer>
-    <div class="footer-brand">
-        <div class="brand-dots small-dots"><span></span><span></span><span></span></div>
-        <span>SECURITY SHIFT TIMER</span>
-    </div>
-    <p>PERSONAL DUTY CONTROL SYSTEM • SMART PAYROLL EDITION</p>
-    <p class="footer-copy">© <span id="year"></span> • STWORZONE DLA LUDZI CHRONIĄCYCH INNYCH</p>
-</footer>
 
 <div class="toast" id="toast"></div>
 
 <script src="script.js"></script>
 </body>
 </html>
-
