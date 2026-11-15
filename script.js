@@ -65,14 +65,12 @@ let nextRandomAt = 0;
 let previousRemaining = null;
 let shiftEndAnnounced = false;
 
-// Historia komunikatów humorystycznych
 let playedFunnyMessages = [];
 
 const announcedMilestones = new Set();
 
 /* ==========================================
    HUMOR MESSAGES
-   LIFE ON POST + NIGHT SHIFT
 ========================================== */
 
 const funnyMessages = [
@@ -95,10 +93,10 @@ const funnyMessages = [
 ];
 
 const hourMessages = [
-  "Minęła {hour} godzina służby. Do zakończenia pozostało {remaining}.",
-  "Raport czasowy. Za Tobą już {hour} godzin służby. Pozostały czas: {remaining}.",
-  "Operatorze, kolejny etap za nami. Minęło {hour} godzin. Do końca zmiany: {remaining}.",
-  "Aktualizacja systemowa. Przepracowano {hour} godzin. Pozostało {remaining}."
+  "Za Tobą już {hourPhrase} służby. Do zakończenia pozostało {remaining}.",
+  "Raport czasowy. Przepracowano {hourPhrase}. Pozostały czas: {remaining}.",
+  "Operatorze, kolejny etap za nami. Za Tobą {hourPhrase} służby. Do końca zmiany: {remaining}.",
+  "Aktualizacja systemowa. Za Tobą {hourPhrase} służby. Pozostało {remaining}."
 ];
 
 const milestones = [
@@ -110,7 +108,7 @@ const milestones = [
   {
     key: "2h",
     ms: 2 * 60 * 60 * 1000,
-    text: "Dwie godziny do końca. Operatorze, utrzymuj gotowość. Meta jest już blisko."
+    text: "Zostały dwie godziny do końca. Operatorze, utrzymuj gotowość. Meta jest już blisko."
   },
   {
     key: "1h",
@@ -120,7 +118,7 @@ const milestones = [
   {
     key: "15m",
     ms: 15 * 60 * 1000,
-    text: "Piętnaście minut do zakończenia służby. Przygotuj się do przekazania stanowiska."
+    text: "Pozostało piętnaście minut do zakończenia służby. Przygotuj się do przekazania stanowiska."
   }
 ];
 
@@ -176,20 +174,57 @@ function formatDuration(milliseconds) {
   return `${hours}h ${pad(minutes)}m`;
 }
 
+/* ==========================================
+   POLISH GRAMMAR ENGINE
+========================================== */
+
+// Poprawna odmiana liczebników w języku polskim.
+function polishQuantity(value, forms) {
+  const number = Math.abs(value);
+  const lastDigit = number % 10;
+  const lastTwoDigits = number % 100;
+
+  if (number === 1) {
+    return `${number} ${forms[0]}`;
+  }
+
+  if (
+    lastDigit >= 2 &&
+    lastDigit <= 4 &&
+    !(lastTwoDigits >= 12 && lastTwoDigits <= 14)
+  ) {
+    return `${number} ${forms[1]}`;
+  }
+
+  return `${number} ${forms[2]}`;
+}
+
+// Naturalny zapis pozostałego czasu do końca służby.
 function formatRemaining(milliseconds) {
   const totalMinutes = Math.max(0, Math.ceil(milliseconds / 60000));
+
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
+  const hoursText = polishQuantity(
+    hours,
+    ["godzina", "godziny", "godzin"]
+  );
+
+  const minutesText = polishQuantity(
+    minutes,
+    ["minuta", "minuty", "minut"]
+  );
+
   if (hours === 0) {
-    return `${minutes} minut`;
+    return minutesText;
   }
 
   if (minutes === 0) {
-    return `${hours} godzin`;
+    return hoursText;
   }
 
-  return `${hours} godzin i ${minutes} minut`;
+  return `${hoursText} i ${minutesText}`;
 }
 
 function formatMoney(value) {
@@ -256,7 +291,6 @@ function loadSettings() {
   el.humorToggle.checked = saved.humor !== false;
   el.timeToggle.checked = saved.time !== false;
 
-  // Przy wczytaniu trwającej służby nie odtwarzamy starych komunikatów.
   if (shiftIsActive()) {
     lastElapsedHour = Math.floor(
       (Date.now() - shift.start.getTime()) / 3600000
@@ -272,7 +306,6 @@ function loadSettings() {
   }
 }
 
-// Odczyt historii komunikatów humorystycznych
 function loadHumorHistory() {
   try {
     const saved = JSON.parse(
@@ -294,7 +327,6 @@ function loadHumorHistory() {
   }
 }
 
-// Zapis historii komunikatów humorystycznych
 function saveHumorHistory() {
   try {
     localStorage.setItem(
@@ -604,7 +636,6 @@ function activateVoice() {
 function enqueueSpeech(message, priority = 1) {
   if (!voiceEnabled || !message) return;
 
-  // Wiadomości o wysokim priorytecie trafiają przed żartami.
   if (priority >= 2) {
     speechQueue = speechQueue.filter(item => item.priority >= priority);
   }
@@ -669,34 +700,27 @@ function testVoice() {
 
 /* ==========================================
    RANDOM HUMOR MESSAGES
-   NO REPEATS UNTIL POOL IS EXHAUSTED
 ========================================== */
 
-// Losowy odstęp od 25 do 50 minut
 function scheduleRandomMessage() {
   const delay = (25 + Math.random() * 25) * 60000;
-
   nextRandomAt = Date.now() + delay;
 }
 
-// Losowanie bez powtórzeń
 function announceRandomMessage() {
   if (!voiceEnabled || !el.humorToggle.checked || !shiftIsActive()) {
     return;
   }
 
-  // Nie odtwarzamy komunikatów, gdy karta jest ukryta
   if (document.hidden) {
     scheduleRandomMessage();
     return;
   }
 
-  // Indeksy komunikatów, które jeszcze nie zostały wykorzystane
   let availableMessages = funnyMessages
     .map((message, index) => index)
     .filter(index => !playedFunnyMessages.includes(index));
 
-  // Jeżeli wykorzystano całą pulę, rozpoczynamy nowy cykl
   if (availableMessages.length === 0) {
     playedFunnyMessages = [];
     saveHumorHistory();
@@ -704,7 +728,6 @@ function announceRandomMessage() {
     availableMessages = funnyMessages.map((message, index) => index);
   }
 
-  // Losujemy jeden niewykorzystany komunikat
   const randomPosition = Math.floor(
     Math.random() * availableMessages.length
   );
@@ -712,16 +735,13 @@ function announceRandomMessage() {
   const selectedIndex = availableMessages[randomPosition];
   const message = funnyMessages[selectedIndex];
 
-  // Zapisujemy komunikat jako wykorzystany
   playedFunnyMessages.push(selectedIndex);
   lastRandomMessage = message;
 
   saveHumorHistory();
 
-  // Odtwarzamy komunikat z niskim priorytetem
   enqueueSpeech(message, 0);
 
-  // Następny komunikat dopiero za 25–50 minut
   scheduleRandomMessage();
 }
 
@@ -743,12 +763,17 @@ function announceElapsedHour() {
     shift.end.getTime() - Date.now()
   );
 
+  const hourPhrase = polishQuantity(
+    elapsedHours,
+    ["godzina", "godziny", "godzin"]
+  );
+
   const template = hourMessages[
     Math.floor(Math.random() * hourMessages.length)
   ];
 
   const message = template
-    .replace("{hour}", String(elapsedHours))
+    .replace("{hourPhrase}", hourPhrase)
     .replace("{remaining}", remaining);
 
   enqueueSpeech(message, 2);
@@ -995,15 +1020,12 @@ function initializeApp() {
 
   render();
 
-  // Ustawiamy punkt odniesienia dla raportów czasu.
   if (isValidShift()) {
     previousRemaining = shift.end.getTime() - Date.now();
   }
 
-  // Odświeżanie niezależne od głosu i komunikatów.
   setInterval(liveUpdate, 250);
 
-  // Pierwsza aktualizacja natychmiast po uruchomieniu.
   liveUpdate();
 
   console.info("SECURITY SHIFT TERMINAL 3.3: SYSTEM ONLINE");
