@@ -13,13 +13,319 @@
 
   <link rel="stylesheet" href="style.css">
 
+  <style>
+    /* COMMANDER AI 2.0 */
+
+    .commander-ai-panel {
+      margin-top: 18px;
+      border-color: rgba(227,30,43,.32);
+      background:
+        radial-gradient(ellipse at 90% 0%, rgba(227,30,43,.10), transparent 45%),
+        linear-gradient(145deg,#10243a,#071426);
+    }
+
+    .commander-ai-panel:before {
+      width: 150px;
+      background: linear-gradient(90deg,#e31e2b,#48c9ef);
+    }
+
+    .ai-version {
+      color: #ff3542;
+      font: 10px "JetBrains Mono",monospace;
+    }
+
+    .ai-status-tag {
+      color: #4ce0a1;
+      border-color: rgba(76,224,161,.35);
+    }
+
+    .commander-ai-intro {
+      color: #8fa2b8;
+      font-size: 11px;
+      line-height: 1.8;
+      margin: 14px 0 20px;
+    }
+
+    .commander-ai-visual {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+      border: 1px solid rgba(139,172,207,.17);
+      border-radius: 8px;
+      background: rgba(3,12,23,.62);
+      margin-bottom: 16px;
+    }
+
+    .ai-core {
+      width: 76px;
+      height: 76px;
+      flex: 0 0 76px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(227,30,43,.55);
+      background: rgba(227,30,43,.08);
+      box-shadow: 0 0 15px rgba(227,30,43,.12), inset 0 0 18px rgba(227,30,43,.12);
+      position: relative;
+    }
+
+    .ai-core:before,
+    .ai-core:after {
+      content: "";
+      position: absolute;
+      inset: -7px;
+      border: 1px solid rgba(227,30,43,.25);
+      border-radius: 50%;
+      animation: commanderOrbit 8s linear infinite;
+    }
+
+    .ai-core:after {
+      inset: -14px;
+      border-color: rgba(72,201,239,.17);
+      animation-direction: reverse;
+      animation-duration: 12s;
+    }
+
+    .ai-core-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+    }
+
+    .ai-core-inner span {
+      font: 800 22px "Barlow Condensed",sans-serif;
+      color: #ff3542;
+      text-shadow: 0 0 12px rgba(227,30,43,.7);
+    }
+
+    .ai-core-inner small {
+      font: 8px "JetBrains Mono",monospace;
+      color: #8fa2b8;
+    }
+
+    .ai-core.listening {
+      border-color: #4ce0a1;
+      box-shadow: 0 0 25px rgba(76,224,161,.3);
+      animation: commanderPulse 1.3s infinite;
+    }
+
+    .ai-core.speaking {
+      border-color: #48c9ef;
+      box-shadow: 0 0 25px rgba(72,201,239,.35);
+      animation: commanderPulse .7s infinite;
+    }
+
+    .ai-core.processing {
+      animation: commanderPulse .5s infinite;
+    }
+
+    .ai-core-info {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .ai-core-info strong {
+      color: white;
+      font: 11px "JetBrains Mono",monospace;
+      letter-spacing: 1px;
+    }
+
+    .ai-core-info > span {
+      color: #8fa2b8;
+      font: 8px "JetBrains Mono",monospace;
+      line-height: 1.6;
+    }
+
+    .ai-wave {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 22px;
+      margin-top: 2px;
+    }
+
+    .ai-wave i {
+      display: block;
+      width: 3px;
+      height: 4px;
+      border-radius: 4px;
+      background: #e31e2b;
+      opacity: .5;
+    }
+
+    .ai-wave.active i {
+      animation: commanderWave .7s ease-in-out infinite alternate;
+      opacity: 1;
+    }
+
+    .ai-wave i:nth-child(2) { animation-delay: .1s; }
+    .ai-wave i:nth-child(3) { animation-delay: .2s; }
+    .ai-wave i:nth-child(4) { animation-delay: .3s; }
+    .ai-wave i:nth-child(5) { animation-delay: .4s; }
+    .ai-wave i:nth-child(6) { animation-delay: .3s; }
+    .ai-wave i:nth-child(7) { animation-delay: .2s; }
+    .ai-wave i:nth-child(8) { animation-delay: .1s; }
+
+    .commander-ai-console {
+      border: 1px solid rgba(72,201,239,.22);
+      border-radius: 7px;
+      background: #030b14;
+      overflow: hidden;
+    }
+
+    .ai-console-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 13px;
+      background: rgba(72,201,239,.06);
+      border-bottom: 1px solid rgba(139,172,207,.17);
+      color: #48c9ef;
+      font: 8px "JetBrains Mono",monospace;
+      letter-spacing: .7px;
+    }
+
+    .ai-console-output {
+      height: 180px;
+      overflow-y: auto;
+      padding: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font: 10px/1.7 "JetBrains Mono",monospace;
+    }
+
+    .ai-log-system { color: #8295aa; }
+    .ai-log-user { color: #48c9ef; }
+    .ai-log-answer { color: #d6e2ef; }
+    .ai-log-error { color: #ff7379; }
+
+    .commander-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-top: 1px solid rgba(139,172,207,.17);
+      background: rgba(12,28,45,.8);
+    }
+
+    .ai-prompt {
+      color: #ff3542;
+      font: 12px "JetBrains Mono",monospace;
+    }
+
+    .commander-input-row input {
+      flex: 1;
+      min-width: 0;
+      padding: 11px;
+      border: 1px solid rgba(139,172,207,.17);
+      border-radius: 5px;
+      outline: none;
+      background: #071426;
+      color: white;
+      font: 10px "JetBrains Mono",monospace;
+    }
+
+    .commander-input-row input:focus {
+      border-color: #48c9ef;
+      box-shadow: 0 0 10px rgba(72,201,239,.12);
+    }
+
+    .commander-ai-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .commander-ai-controls button {
+      flex: 1 1 180px;
+      min-height: 40px;
+    }
+
+    .commander-ai-controls button:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .commander-quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .commander-quick-actions button {
+      min-height: 38px;
+      border: 1px solid rgba(139,172,207,.17);
+      border-radius: 5px;
+      background: rgba(15,36,57,.8);
+      color: #aebfd1;
+      font: 8px "JetBrains Mono",monospace;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .commander-quick-actions button:hover {
+      color: white;
+      border-color: #e31e2b;
+      background: rgba(227,30,43,.10);
+    }
+
+    .commander-ai-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 15px;
+      color: #71849b;
+      font: 7px "JetBrains Mono",monospace;
+      letter-spacing: .6px;
+    }
+
+    .commander-ai-footer span:first-child {
+      color: #4ce0a1;
+    }
+
+    @keyframes commanderOrbit {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes commanderPulse {
+      0%,100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    @keyframes commanderWave {
+      from { height: 4px; }
+      to { height: 20px; }
+    }
+
+    @media(max-width:600px) {
+      .commander-ai-visual { padding: 16px; gap: 16px; }
+      .ai-core { width: 60px; height: 60px; flex-basis: 60px; }
+      .commander-quick-actions { grid-template-columns: repeat(2,1fr); }
+      .commander-ai-footer { flex-direction: column; }
+      .commander-input-row { flex-wrap: wrap; }
+      .commander-input-row input { order: 2; flex-basis: 100%; }
+      .commander-input-row button { order: 3; width: 100%; }
+    }
+  </style>
+
   <!-- Biblioteka połączeń WebRTC -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
 
   <!-- Główna aplikacja -->
   <script src="script.js" defer></script>
 
-  <!-- Moduł LIVE LINK -->
+  <!-- COMMANDER AI -->
+  <script src="commander-ai.js" defer></script>
+
+  <!-- LIVE LINK -->
   <script src="live.js" defer></script>
 </head>
 
@@ -133,8 +439,6 @@
           <div class="eyebrow">00 / SECURE LIVE CONNECTION</div>
           <h2>LIVE LINK</h2>
         </div>
-
-        <!-- WAŻNE: liveModeLabel jest wymagany przez live.js -->
         <span class="corner-tag" id="liveModeLabel">WEBRTC / P2P</span>
       </div>
 
@@ -169,21 +473,10 @@
       </div>
 
       <div class="live-controls">
-        <button id="liveStartBtn" class="primary-btn" type="button">
-          URUCHOM TRANSMISJĘ
-        </button>
-
-        <button id="liveJoinBtn" class="secondary-btn" type="button" hidden>
-          DOŁĄCZ DO POŁĄCZENIA
-        </button>
-
-        <button id="liveCopyBtn" class="secondary-btn" type="button" disabled>
-          KOPIUJ LINK
-        </button>
-
-        <button id="liveStopBtn" class="secondary-btn" type="button" disabled>
-          ZAKOŃCZ POŁĄCZENIE
-        </button>
+        <button id="liveStartBtn" class="primary-btn" type="button">URUCHOM TRANSMISJĘ</button>
+        <button id="liveJoinBtn" class="secondary-btn" type="button" hidden>DOŁĄCZ DO POŁĄCZENIA</button>
+        <button id="liveCopyBtn" class="secondary-btn" type="button" disabled>KOPIUJ LINK</button>
+        <button id="liveStopBtn" class="secondary-btn" type="button" disabled>ZAKOŃCZ POŁĄCZENIE</button>
       </div>
 
       <div class="live-link-wrap" id="liveLinkWrap" hidden>
@@ -204,7 +497,6 @@
         Obie strony muszą zezwolić na dostęp do kamery i mikrofonu.
       </p>
     </section>
-    <!-- KONIEC LIVE LINK -->
 
     <section class="dashboard-grid">
 
@@ -389,6 +681,86 @@
         </div>
       </article>
 
+    </section>
+
+    <!-- COMMANDER AI 2.0 -->
+    <section class="panel commander-ai-panel" id="commanderAI">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">06 / COMMANDER ARTIFICIAL INTELLIGENCE</div>
+          <h2>COMMANDER AI <span class="ai-version">2.0</span></h2>
+        </div>
+        <span class="corner-tag ai-status-tag" id="commanderAIStatus">AI READY</span>
+      </div>
+
+      <p class="commander-ai-intro">
+        Głosowe centrum dowodzenia. Wydawaj polecenia głosowo lub wpisuj je ręcznie.
+        COMMANDER odczytuje aktualne dane służby i reaguje na polecenia operatora.
+      </p>
+
+      <div class="commander-ai-visual">
+        <div class="ai-core" id="commanderCore">
+          <div class="ai-core-inner">
+            <span>AI</span>
+            <small>01</small>
+          </div>
+        </div>
+
+        <div class="ai-core-info">
+          <strong id="commanderAIState">SYSTEM GOTOWY</strong>
+          <span id="commanderAIHint">OCZEKIWANIE NA POLECENIE OPERATORA</span>
+          <div class="ai-wave" id="commanderWave">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="commander-ai-console">
+        <div class="ai-console-heading">
+          <span>COMMAND TERMINAL</span>
+          <span>SECURE LOCAL INTERFACE</span>
+        </div>
+
+        <div class="ai-console-output" id="commanderLog" aria-live="polite">
+          <div class="ai-log-system">[SYSTEM] COMMANDER AI 2.0 gotowy do pracy.</div>
+          <div class="ai-log-system">[SYSTEM] Oczekiwanie na polecenie operatora.</div>
+        </div>
+
+        <form class="commander-input-row" id="commanderForm">
+          <span class="ai-prompt">&gt;_</span>
+          <input
+            type="text"
+            id="commanderInput"
+            placeholder="Wpisz polecenie..."
+            autocomplete="off"
+          >
+          <button type="submit" class="primary-btn">WYŚLIJ</button>
+        </form>
+      </div>
+
+      <div class="commander-ai-controls">
+        <button id="commanderListenBtn" class="primary-btn" type="button">
+          🎙 URUCHOM NASŁUCH
+        </button>
+        <button id="commanderStopBtn" class="secondary-btn" type="button" disabled>
+          ZATRZYMAJ NASŁUCH
+        </button>
+        <button id="commanderRepeatBtn" class="secondary-btn" type="button">
+          POWTÓRZ KOMUNIKAT
+        </button>
+      </div>
+
+      <div class="commander-quick-actions">
+        <button type="button" data-commander-command="status służby">STATUS SŁUŻBY</button>
+        <button type="button" data-commander-command="ile zostało do końca">CZAS DO KOŃCA</button>
+        <button type="button" data-commander-command="podaj zarobki">ZAROBKI</button>
+        <button type="button" data-commander-command="która godzina">GODZINA</button>
+      </div>
+
+      <div class="commander-ai-footer">
+        <span>● COMMANDER CORE ONLINE</span>
+        <span>VOICE RECOGNITION / POLISH</span>
+      </div>
     </section>
 
     <footer class="footer">
