@@ -10,7 +10,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+
+  <!-- Biblioteka połączenia wideo -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
+
+  <!-- Główny system aplikacji -->
   <script src="script.js" defer></script>
+
+  <!-- Moduł połączenia LIVE LINK -->
+  <script src="live.js" defer></script>
 </head>
 <body>
   <div class="background-grid"></div>
@@ -85,6 +93,69 @@
         <div class="stage-stat"><span>INTERFEJS</span><strong>V3.3</strong></div>
       </div>
     </section>
+
+    <!-- LIVE LINK: POŁĄCZENIE WIDEO I AUDIO -->
+    <section class="panel live-panel" id="livePanel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">00 / SECURE LIVE CONNECTION</div>
+          <h2>LIVE LINK</h2>
+        </div>
+        <span class="corner-tag">WEBRTC / P2P</span>
+      </div>
+
+      <p class="live-intro">
+        Prywatne połączenie audio-wideo na żywo. Uruchom transmisję i udostępnij
+        wygenerowany link drugiej osobie. Obie strony mogą widzieć się i słyszeć.
+      </p>
+
+      <div class="live-status-line">
+        <span class="live-status-dot" id="liveStatusDot"></span>
+        <strong id="liveStatus">SYSTEM OCZEKUJE</strong>
+        <span id="livePeerCount">0 / 1 POŁĄCZONYCH</span>
+      </div>
+
+      <div class="live-video-grid">
+        <div class="live-video-card">
+          <div class="live-video-label">
+            <strong>LOKALNA KAMERA</strong>
+            <span id="localVideoState">OFFLINE</span>
+          </div>
+          <video id="localVideo" autoplay playsinline muted></video>
+        </div>
+
+        <div class="live-video-card">
+          <div class="live-video-label">
+            <strong>DRUGA STRONA</strong>
+            <span id="remoteVideoState">OCZEKIWANIE</span>
+          </div>
+          <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+      </div>
+
+      <div class="live-controls">
+        <button id="liveStartBtn" class="primary-btn">URUCHOM TRANSMISJĘ</button>
+        <button id="liveJoinBtn" class="secondary-btn" hidden>DOŁĄCZ DO POŁĄCZENIA</button>
+        <button id="liveCopyBtn" class="secondary-btn" disabled>KOPIUJ LINK</button>
+        <button id="liveStopBtn" class="secondary-btn" disabled>ZAKOŃCZ POŁĄCZENIE</button>
+      </div>
+
+      <div class="live-link-wrap" id="liveLinkWrap" hidden>
+        <label for="liveShareUrl">LINK ZAPROSZENIA</label>
+        <input id="liveShareUrl" type="text" readonly value="">
+        <small>Wyślij ten link osobie, z którą chcesz się połączyć. Link traktuj jak prywatne zaproszenie — każda osoba, która go otrzyma, może spróbować dołączyć.</small>
+      </div>
+
+      <p class="live-feedback" id="liveFeedback" aria-live="polite">
+        Moduł LIVE LINK gotowy do uruchomienia.
+      </p>
+
+      <p class="live-privacy">
+        POŁĄCZENIE: WEBRTC • TRANSMISJA AUDIO/WIDEO NIE JEST NAGRYWANA PRZEZ TEN MODUŁ.
+        Przeglądarka poprosi obie strony o dostęp do kamery i mikrofonu.
+      </p>
+    </section>
+    <!-- KONIEC LIVE LINK -->
 
     <section class="dashboard-grid">
       <article class="panel countdown-panel">
