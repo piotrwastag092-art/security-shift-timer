@@ -6,20 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#071426">
   <title>SECURITY SHIFT TERMINAL</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css">
 
-  <!-- Biblioteka połączenia wideo -->
+  <!-- Biblioteka połączeń WebRTC -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
 
-  <!-- Główny system aplikacji -->
+  <!-- Główna aplikacja -->
   <script src="script.js" defer></script>
 
-  <!-- Moduł połączenia LIVE LINK -->
+  <!-- Moduł LIVE LINK -->
   <script src="live.js" defer></script>
 </head>
+
 <body>
   <div class="background-grid"></div>
   <div class="scanlines"></div>
@@ -34,6 +37,7 @@
         <div class="brand-caption">PERSONAL SECURITY COMMAND CENTER</div>
       </div>
     </div>
+
     <div class="top-actions">
       <div class="online-indicator"><span></span> SYSTEM ONLINE</div>
       <button id="fullscreenBtn" class="icon-btn" title="Pełny ekran" aria-label="Pełny ekran">⛶</button>
@@ -41,12 +45,17 @@
   </header>
 
   <main class="container">
+
     <section class="hero">
       <div class="hero-copy">
         <div class="eyebrow"><span class="eyebrow-line"></span> OPERATOR INTERFACE / POLAND</div>
         <h1>SHIFT <span>COMMAND</span></h1>
         <p>Centrum kontroli służby. Wszystkie najważniejsze informacje w jednym miejscu.</p>
-        <div class="hero-tags"><span>● LIVE MONITORING</span><span>● COMMANDER 01</span><span>● SHIFT CONTROL</span></div>
+        <div class="hero-tags">
+          <span>● LIVE MONITORING</span>
+          <span>● COMMANDER 01</span>
+          <span>● SHIFT CONTROL</span>
+        </div>
       </div>
 
       <div class="clock-panel">
@@ -57,9 +66,21 @@
     </section>
 
     <section class="status-strip">
-      <div class="status-item"><span class="status-light"></span><span>SYSTEM</span><strong id="systemStatus">URUCHAMIANIE</strong></div>
-      <div class="status-item"><span class="status-light red"></span><span>SŁUŻBA</span><strong id="shiftStatus">NIEAKTYWNA</strong></div>
-      <div class="status-item"><span class="status-light blue"></span><span>ASYSTENT</span><strong id="voiceStatus">OCZEKUJE</strong></div>
+      <div class="status-item">
+        <span class="status-light"></span>
+        <span>SYSTEM</span>
+        <strong id="systemStatus">URUCHAMIANIE</strong>
+      </div>
+      <div class="status-item">
+        <span class="status-light red"></span>
+        <span>SŁUŻBA</span>
+        <strong id="shiftStatus">NIEAKTYWNA</strong>
+      </div>
+      <div class="status-item">
+        <span class="status-light blue"></span>
+        <span>ASYSTENT</span>
+        <strong id="voiceStatus">OCZEKUJE</strong>
+      </div>
     </section>
 
     <section class="visual-stage">
@@ -68,6 +89,7 @@
         <h2>OBIEKT POD <span>KONTROLĄ</span></h2>
         <p>System monitorowania czasu służby aktywny</p>
       </div>
+
       <div class="radar-scene" aria-hidden="true">
         <div class="radar-glow"></div>
         <div class="radar-ring ring-one"></div>
@@ -87,26 +109,39 @@
         <div class="radar-label label-top">LIVE SIGNAL</div>
         <div class="radar-label label-bottom">SECURE CONNECTION</div>
       </div>
+
       <div class="stage-side">
-        <div class="stage-stat"><span>STATUS SIECI</span><strong><i class="green-dot"></i> STABILNY</strong></div>
-        <div class="stage-stat"><span>TRYB SYSTEMU</span><strong>ACTIVE</strong></div>
-        <div class="stage-stat"><span>INTERFEJS</span><strong>V3.3</strong></div>
+        <div class="stage-stat">
+          <span>STATUS SIECI</span>
+          <strong><i class="green-dot"></i> STABILNY</strong>
+        </div>
+        <div class="stage-stat">
+          <span>TRYB SYSTEMU</span>
+          <strong>ACTIVE</strong>
+        </div>
+        <div class="stage-stat">
+          <span>INTERFEJS</span>
+          <strong>V3.3</strong>
+        </div>
       </div>
     </section>
 
-    <!-- LIVE LINK: POŁĄCZENIE WIDEO I AUDIO -->
+    <!-- LIVE LINK -->
     <section class="panel live-panel" id="livePanel">
       <div class="panel-heading">
         <div>
           <div class="eyebrow">00 / SECURE LIVE CONNECTION</div>
           <h2>LIVE LINK</h2>
         </div>
-        <span class="corner-tag">WEBRTC / P2P</span>
+
+        <!-- WAŻNE: liveModeLabel jest wymagany przez live.js -->
+        <span class="corner-tag" id="liveModeLabel">WEBRTC / P2P</span>
       </div>
 
       <p class="live-intro">
-        Prywatne połączenie audio-wideo na żywo. Uruchom transmisję i udostępnij
-        wygenerowany link drugiej osobie. Obie strony mogą widzieć się i słyszeć.
+        Prywatne połączenie audio-wideo na żywo. Uruchom transmisję,
+        a następnie udostępnij wygenerowany link drugiej osobie.
+        Obie strony mogą widzieć się i słyszeć.
       </p>
 
       <div class="live-status-line">
@@ -134,16 +169,30 @@
       </div>
 
       <div class="live-controls">
-        <button id="liveStartBtn" class="primary-btn">URUCHOM TRANSMISJĘ</button>
-        <button id="liveJoinBtn" class="secondary-btn" hidden>DOŁĄCZ DO POŁĄCZENIA</button>
-        <button id="liveCopyBtn" class="secondary-btn" disabled>KOPIUJ LINK</button>
-        <button id="liveStopBtn" class="secondary-btn" disabled>ZAKOŃCZ POŁĄCZENIE</button>
+        <button id="liveStartBtn" class="primary-btn" type="button">
+          URUCHOM TRANSMISJĘ
+        </button>
+
+        <button id="liveJoinBtn" class="secondary-btn" type="button" hidden>
+          DOŁĄCZ DO POŁĄCZENIA
+        </button>
+
+        <button id="liveCopyBtn" class="secondary-btn" type="button" disabled>
+          KOPIUJ LINK
+        </button>
+
+        <button id="liveStopBtn" class="secondary-btn" type="button" disabled>
+          ZAKOŃCZ POŁĄCZENIE
+        </button>
       </div>
 
       <div class="live-link-wrap" id="liveLinkWrap" hidden>
         <label for="liveShareUrl">LINK ZAPROSZENIA</label>
         <input id="liveShareUrl" type="text" readonly value="">
-        <small>Wyślij ten link osobie, z którą chcesz się połączyć. Link traktuj jak prywatne zaproszenie — każda osoba, która go otrzyma, może spróbować dołączyć.</small>
+        <small>
+          Wyślij ten link osobie, z którą chcesz się połączyć.
+          Każda osoba posiadająca link może spróbować dołączyć.
+        </small>
       </div>
 
       <p class="live-feedback" id="liveFeedback" aria-live="polite">
@@ -151,18 +200,23 @@
       </p>
 
       <p class="live-privacy">
-        POŁĄCZENIE: WEBRTC • TRANSMISJA AUDIO/WIDEO NIE JEST NAGRYWANA PRZEZ TEN MODUŁ.
-        Przeglądarka poprosi obie strony o dostęp do kamery i mikrofonu.
+        POŁĄCZENIE: WEBRTC • MODUŁ NIE ZAWIERA FUNKCJI NAGRYWANIA.
+        Obie strony muszą zezwolić na dostęp do kamery i mikrofonu.
       </p>
     </section>
     <!-- KONIEC LIVE LINK -->
 
     <section class="dashboard-grid">
+
       <article class="panel countdown-panel">
         <div class="panel-heading">
-          <div><div class="eyebrow">01 / LIVE COUNTDOWN</div><h2>DO KOŃCA SŁUŻBY</h2></div>
+          <div>
+            <div class="eyebrow">01 / LIVE COUNTDOWN</div>
+            <h2>DO KOŃCA SŁUŻBY</h2>
+          </div>
           <span class="corner-tag">REAL TIME</span>
         </div>
+
         <div class="countdown">
           <div class="time-unit"><strong id="days">00</strong><span>DNI</span></div>
           <div class="time-separator">:</div>
@@ -172,8 +226,16 @@
           <div class="time-separator">:</div>
           <div class="time-unit"><strong id="seconds">00</strong><span>SEKUND</span></div>
         </div>
-        <div class="progress-meta"><span>POSTĘP SŁUŻBY</span><strong id="progressText">0%</strong></div>
-        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+
+        <div class="progress-meta">
+          <span>POSTĘP SŁUŻBY</span>
+          <strong id="progressText">0%</strong>
+        </div>
+
+        <div class="progress-track">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+
         <div class="shift-meta">
           <div><span>ROZPOCZĘCIE</span><strong id="startDisplay">---</strong></div>
           <div><span>ZAKOŃCZENIE</span><strong id="endDisplay">---</strong></div>
@@ -183,9 +245,13 @@
 
       <article class="panel earnings-panel">
         <div class="panel-heading">
-          <div><div class="eyebrow">02 / LIVE EARNINGS</div><h2>ZAROBKI NA ŻYWO</h2></div>
+          <div>
+            <div class="eyebrow">02 / LIVE EARNINGS</div>
+            <h2>ZAROBKI NA ŻYWO</h2>
+          </div>
           <div class="money-symbol">zł</div>
         </div>
+
         <div id="earnings" class="earnings-value">0,00 zł</div>
         <div class="earnings-caption">SZACUNKOWE WYNAGRODZENIE ZA BIEŻĄCĄ SŁUŻBĘ</div>
         <div class="earnings-divider"></div>
@@ -193,70 +259,147 @@
         <div class="earnings-row"><span>Przepracowany czas</span><strong id="workedDisplay">0h 00m</strong></div>
         <div class="earnings-note">Wartość orientacyjna na podstawie ustawionej stawki.</div>
       </article>
+
     </section>
 
     <section class="panel settings-panel">
       <div class="panel-heading">
-        <div><div class="eyebrow">03 / SHIFT CONFIGURATION</div><h2>KONFIGURACJA SŁUŻBY</h2></div>
+        <div>
+          <div class="eyebrow">03 / SHIFT CONFIGURATION</div>
+          <h2>KONFIGURACJA SŁUŻBY</h2>
+        </div>
         <span class="corner-tag">OPERATOR SETTINGS</span>
       </div>
+
       <div class="settings-grid">
-        <label class="field"><span>DATA I GODZINA ROZPOCZĘCIA</span><input type="datetime-local" id="shiftStart"></label>
-        <label class="field"><span>DATA I GODZINA ZAKOŃCZENIA</span><input type="datetime-local" id="shiftEnd"></label>
-        <label class="field"><span>STAWKA GODZINOWA (ZŁ)</span><input type="number" id="hourlyRate" min="0" step="0.01" placeholder="34"></label>
+        <label class="field">
+          <span>DATA I GODZINA ROZPOCZĘCIA</span>
+          <input type="datetime-local" id="shiftStart">
+        </label>
+
+        <label class="field">
+          <span>DATA I GODZINA ZAKOŃCZENIA</span>
+          <input type="datetime-local" id="shiftEnd">
+        </label>
+
+        <label class="field">
+          <span>STAWKA GODZINOWA (ZŁ)</span>
+          <input type="number" id="hourlyRate" min="0" step="0.01" placeholder="34">
+        </label>
       </div>
+
       <div class="button-row">
-        <button id="saveShift" class="primary-btn">ZAPISZ USTAWIENIA</button>
-        <button id="clearShift" class="secondary-btn">WYCZYŚĆ DANE</button>
+        <button id="saveShift" class="primary-btn" type="button">ZAPISZ USTAWIENIA</button>
+        <button id="clearShift" class="secondary-btn" type="button">WYCZYŚĆ DANE</button>
       </div>
-      <p id="settingsMessage" class="settings-message">Ustaw godziny służby, aby uruchomić odliczanie.</p>
+
+      <p id="settingsMessage" class="settings-message">
+        Ustaw godziny służby, aby uruchomić odliczanie.
+      </p>
     </section>
 
     <section class="lower-grid">
+
       <article class="panel reminders-panel">
-        <div class="panel-heading"><div><div class="eyebrow">04 / SECURITY PROTOCOLS</div><h2>PRZYPOMNIENIA</h2></div></div>
-        <div class="toggle-row">
-          <div><strong>Raport obecności</strong><span>Przypomnienie o pełnej godzinie (:00)</span></div>
-          <label class="switch"><input type="checkbox" id="reportToggle"><span class="slider"></span></label>
+        <div class="panel-heading">
+          <div>
+            <div class="eyebrow">04 / SECURITY PROTOCOLS</div>
+            <h2>PRZYPOMNIENIA</h2>
+          </div>
         </div>
+
         <div class="toggle-row">
-          <div><strong>Obchód / patrol</strong><span>Przypomnienie co godzinę (:05)</span></div>
-          <label class="switch"><input type="checkbox" id="patrolToggle"><span class="slider"></span></label>
+          <div>
+            <strong>Raport obecności</strong>
+            <span>Przypomnienie o pełnej godzinie (:00)</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="reportToggle">
+            <span class="slider"></span>
+          </label>
         </div>
-        <div class="small-note">Przypomnienia działają tylko podczas aktywnej służby.</div>
+
+        <div class="toggle-row">
+          <div>
+            <strong>Obchód / patrol</strong>
+            <span>Przypomnienie co godzinę (:05)</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="patrolToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="small-note">
+          Przypomnienia działają tylko podczas aktywnej służby.
+        </div>
       </article>
 
       <article class="panel voice-panel">
         <div class="panel-heading">
-          <div><div class="eyebrow">05 / COMMANDER VOICE ENGINE</div><h2>ASYSTENT GŁOSOWY</h2></div>
+          <div>
+            <div class="eyebrow">05 / COMMANDER VOICE ENGINE</div>
+            <h2>ASYSTENT GŁOSOWY</h2>
+          </div>
           <span class="voice-badge">COMMANDER 01</span>
         </div>
+
         <div class="commander-box">
           <div class="commander-avatar">◈</div>
-          <div class="commander-copy"><strong>COMMANDER 01</strong><span>POLISH VOICE INTERFACE</span></div>
+          <div class="commander-copy">
+            <strong>COMMANDER 01</strong>
+            <span>POLISH VOICE INTERFACE</span>
+          </div>
           <span id="voiceIndicator" class="voice-indicator"></span>
         </div>
+
         <div class="toggle-row">
-          <div><strong>Humorystyczne komunikaty</strong><span>Losowe teksty podczas służby</span></div>
-          <label class="switch"><input type="checkbox" id="humorToggle" checked><span class="slider"></span></label>
+          <div>
+            <strong>Humorystyczne komunikaty</strong>
+            <span>Losowe teksty podczas służby</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="humorToggle" checked>
+            <span class="slider"></span>
+          </label>
         </div>
+
         <div class="toggle-row">
-          <div><strong>Raporty czasu służby</strong><span>Kolejne godziny i czas do końca</span></div>
-          <label class="switch"><input type="checkbox" id="timeToggle" checked><span class="slider"></span></label>
+          <div>
+            <strong>Raporty czasu służby</strong>
+            <span>Kolejne godziny i czas do końca</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="timeToggle" checked>
+            <span class="slider"></span>
+          </label>
         </div>
+
         <div class="voice-actions">
-          <button id="voiceBtn" class="primary-btn">AKTYWUJ GŁOS</button>
-          <button id="testVoiceBtn" class="secondary-btn">TEST GŁOSU</button>
+          <button id="voiceBtn" class="primary-btn" type="button">AKTYWUJ GŁOS</button>
+          <button id="testVoiceBtn" class="secondary-btn" type="button">TEST GŁOSU</button>
         </div>
-        <div id="assistantMessage" class="assistant-message">COMMANDER 01: System gotowy. Oczekuję na aktywację operatora.</div>
-        <div class="voice-footnote">Głos zależy od syntezatora dostępnego w systemie i przeglądarce.</div>
+
+        <div id="assistantMessage" class="assistant-message">
+          COMMANDER 01: System gotowy. Oczekuję na aktywację operatora.
+        </div>
+
+        <div class="voice-footnote">
+          Głos zależy od syntezatora dostępnego w systemie i przeglądarce.
+        </div>
       </article>
+
     </section>
 
     <footer class="footer">
-      <div><span class="securitas-mark mini"><i></i><i></i><i></i></span> SECURITY SHIFT TERMINAL <span class="version">V3.3</span></div>
+      <div>
+        <span class="securitas-mark mini"><i></i><i></i><i></i></span>
+        SECURITY SHIFT TERMINAL
+        <span class="version">V3.3</span>
+      </div>
       <span>PERSONAL OPERATOR TOOL // NOT AN OFFICIAL SECURITY SYSTEM</span>
     </footer>
+
   </main>
 </body>
 </html>
