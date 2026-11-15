@@ -7,6 +7,7 @@
 ========================================== */
 
 const STORAGE_KEY = "securityShiftTerminalV33";
+const HUMOR_HISTORY_KEY = "securityShiftTerminalHumorHistoryV1";
 
 const $ = id => document.getElementById(id);
 
@@ -64,25 +65,33 @@ let nextRandomAt = 0;
 let previousRemaining = null;
 let shiftEndAnnounced = false;
 
+// Historia komunikatów humorystycznych
+let playedFunnyMessages = [];
+
 const announcedMilestones = new Set();
 
+/* ==========================================
+   HUMOR MESSAGES
+   LIFE ON POST + NIGHT SHIFT
+========================================== */
+
 const funnyMessages = [
+  // ŻYCIE NA POSTERUNKU
   "Operatorze, wykryto krytyczny niedobór kofeiny. Zalecam natychmiastową interwencję w postaci kawy.",
-  "Skanowanie zakończone. Nie wykryto zagrożeń. Wykryto natomiast człowieka, który bardzo chce już iść do domu.",
-  "Operatorze, Twoja cierpliwość została sklasyfikowana jako zasób strategiczny.",
-  "Uwaga. Poziom nudy przekroczył dopuszczalne normy. Proszę zachować spokój i nie zasnąć na stanowisku.",
+  "Kawa została uznana za oficjalny element wyposażenia stanowiska.",
+  "Status posterunku: spokojnie. Podejrzanie spokojnie. Zachowujemy czujność.",
   "System informuje, że krzesło nadal działa prawidłowo. Operator również, choć wymaga dalszej obserwacji.",
-  "Nie wykryto intruzów. Wykryto za to podejrzanie częste spoglądanie na zegarek.",
-  "Operatorze, pamiętaj. Kawa nie rozwiązuje wszystkich problemów. Ale zdecydowanie poprawia sytuację.",
-  "Raport systemowy: obiekt spokojny, monitoring aktywny, operator prawdopodobnie myśli o jedzeniu.",
-  "Wszystkie systemy sprawne. Jedynym wykrytym zagrożeniem jest kolejna godzina służby.",
-  "Proszę nie regulować odbiornika. To tylko ja. Twój ulubiony głos z centrum dowodzenia.",
-  "Operatorze, wykryto anomalię. Czas płynie podejrzanie wolno. Trwa dalsza analiza.",
-  "Jeśli służba wydaje się długa, proszę pamiętać, że dinozaury też kiedyś musiały czekać na koniec zmiany.",
-  "System podtrzymuje gotowość operacyjną. Operator może rozważyć uzupełnienie zapasów przekąsek.",
-  "Nie ma powodów do paniki. To tylko kolejna godzina. Prawdopodobnie jedna z wielu.",
-  "Wykryto próbę negocjacji z zegarem. Informuję, że zegar nie przyjmuje reklamacji.",
-  "Operatorze, utrzymuj czujność. Nawet ekspres do kawy może dziś potrzebować ochrony."
+  "Wykryto wzmożoną aktywność operatora w kierunku ekspresu do kawy.",
+  "Kolejna godzina służby za nami. System sugeruje dumę i ewentualnie kawę.",
+  "Nie odnotowano zagrożeń. Odnotowano natomiast wyraźną potrzebę odpoczynku.",
+
+  // NOCNA SŁUŻBA
+  "Jest już ta godzina, kiedy nawet drukarka brzmi podejrzanie.",
+  "Nocna zmiana trwa. Ktoś musi pilnować, żeby budynek nie uciekł.",
+  "Wykryto ciszę na obiekcie. Niepokojące, ale zgodne z planem.",
+  "Jeśli słyszysz dziwne dźwięki, najpierw sprawdź, czy to nie klimatyzacja.",
+  "Noc jest młoda. Operator trochę mniej.",
+  "System podtrzymuje gotowość operacyjną. Operator może wspomóc się kawą."
 ];
 
 const hourMessages = [
@@ -260,6 +269,42 @@ function loadSettings() {
 
   if (isValidShift()) {
     previousRemaining = shift.end.getTime() - Date.now();
+  }
+}
+
+// Odczyt historii komunikatów humorystycznych
+function loadHumorHistory() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(HUMOR_HISTORY_KEY) || "{}"
+    );
+
+    if (Array.isArray(saved.played)) {
+      playedFunnyMessages = saved.played.filter(index =>
+        Number.isInteger(index) &&
+        index >= 0 &&
+        index < funnyMessages.length
+      );
+    } else {
+      playedFunnyMessages = [];
+    }
+  } catch (error) {
+    console.warn("Nie udało się wczytać historii humoru:", error);
+    playedFunnyMessages = [];
+  }
+}
+
+// Zapis historii komunikatów humorystycznych
+function saveHumorHistory() {
+  try {
+    localStorage.setItem(
+      HUMOR_HISTORY_KEY,
+      JSON.stringify({
+        played: playedFunnyMessages
+      })
+    );
+  } catch (error) {
+    console.warn("Nie udało się zapisać historii humoru:", error);
   }
 }
 
@@ -540,7 +585,11 @@ function activateVoice() {
       3
     );
 
-    nextRandomAt = Date.now() + 20 * 60000;
+    if (el.humorToggle.checked && shiftIsActive()) {
+      scheduleRandomMessage();
+    } else {
+      nextRandomAt = 0;
+    }
   } else {
     speechQueue = [];
     speechSynthesis.cancel();
@@ -620,34 +669,59 @@ function testVoice() {
 
 /* ==========================================
    RANDOM HUMOR MESSAGES
+   NO REPEATS UNTIL POOL IS EXHAUSTED
 ========================================== */
 
+// Losowy odstęp od 25 do 50 minut
 function scheduleRandomMessage() {
-  nextRandomAt = Date.now() + (20 + Math.random() * 20) * 60000;
+  const delay = (25 + Math.random() * 25) * 60000;
+
+  nextRandomAt = Date.now() + delay;
 }
 
+// Losowanie bez powtórzeń
 function announceRandomMessage() {
-  if (!voiceEnabled || !el.humorToggle.checked || !shiftIsActive()) return;
+  if (!voiceEnabled || !el.humorToggle.checked || !shiftIsActive()) {
+    return;
+  }
 
-  // Nie odtwarzamy żartów, gdy użytkownik nie ma otwartej karty.
+  // Nie odtwarzamy komunikatów, gdy karta jest ukryta
   if (document.hidden) {
     scheduleRandomMessage();
     return;
   }
 
-  let message = funnyMessages[
-    Math.floor(Math.random() * funnyMessages.length)
-  ];
+  // Indeksy komunikatów, które jeszcze nie zostały wykorzystane
+  let availableMessages = funnyMessages
+    .map((message, index) => index)
+    .filter(index => !playedFunnyMessages.includes(index));
 
-  while (message === lastRandomMessage && funnyMessages.length > 1) {
-    message = funnyMessages[
-      Math.floor(Math.random() * funnyMessages.length)
-    ];
+  // Jeżeli wykorzystano całą pulę, rozpoczynamy nowy cykl
+  if (availableMessages.length === 0) {
+    playedFunnyMessages = [];
+    saveHumorHistory();
+
+    availableMessages = funnyMessages.map((message, index) => index);
   }
 
+  // Losujemy jeden niewykorzystany komunikat
+  const randomPosition = Math.floor(
+    Math.random() * availableMessages.length
+  );
+
+  const selectedIndex = availableMessages[randomPosition];
+  const message = funnyMessages[selectedIndex];
+
+  // Zapisujemy komunikat jako wykorzystany
+  playedFunnyMessages.push(selectedIndex);
   lastRandomMessage = message;
 
+  saveHumorHistory();
+
+  // Odtwarzamy komunikat z niskim priorytetem
   enqueueSpeech(message, 0);
+
+  // Następny komunikat dopiero za 25–50 minut
   scheduleRandomMessage();
 }
 
@@ -842,7 +916,7 @@ function bindEvents() {
       saveSettings();
 
       if (toggle === el.humorToggle) {
-        if (toggle.checked) {
+        if (toggle.checked && voiceEnabled && shiftIsActive()) {
           scheduleRandomMessage();
         } else {
           nextRandomAt = 0;
@@ -854,7 +928,9 @@ function bindEvents() {
 
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden && voiceEnabled && el.humorToggle.checked) {
-      if (!nextRandomAt) scheduleRandomMessage();
+      if (!nextRandomAt && shiftIsActive()) {
+        scheduleRandomMessage();
+      }
     }
   });
 }
@@ -912,6 +988,7 @@ function initializeApp() {
   }
 
   loadSettings();
+  loadHumorHistory();
   refreshVoices();
   updateVoiceUI();
   bindEvents();
@@ -924,7 +1001,6 @@ function initializeApp() {
   }
 
   // Odświeżanie niezależne od głosu i komunikatów.
-  // 250 ms zapewnia płynne odświeżanie interfejsu.
   setInterval(liveUpdate, 250);
 
   // Pierwsza aktualizacja natychmiast po uruchomieniu.
